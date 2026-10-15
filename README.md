@@ -1,139 +1,169 @@
-# audex-web
+![AudEx logo](public/logo/audex-lockup.png)
 
-The AudEx web app: a mobile-first, offline-capable PWA (React + TypeScript + Vite) for housekeeping audits at WPC Health Care Division.
-The server lives in a separate private repository, **audex-api**.
+# Audit with confidence.
 
-```
-src/       the app (scoring twin of the server engine, audits, sites, photos, dashboard, PDF report, sign-in)
-public/    icons, logos, splash screens, manifest
-shared/    template.json, rulesets.json, scoring-fixtures.json  <- COPY, see below
-brand/     logo artwork (source/) and generated exports
-tools/     build_brand_assets.py
-```
+A mobile-first, offline-capable audit app for housekeeping teams at WPC Health Care Division, built with React, TypeScript and Vite.
 
-## Run
-```
-npm install
+**Capture audits offline** · **Score consistently** · **See what is improving**
+
+---
+
+## At a glance
+
+AudEx helps housekeeping teams complete structured site audits on a phone, review performance, and create shareable PDF reports. Audits are stored on the device as they are completed, so the app remains useful without a network connection. Connect the separate **`audex-api`** server to enable sign-in and synchronization.
+
+> **Project status:** the web app is actively developed. Some server integrations and cross-device features are not yet available; see [Current limitations](#current-limitations) before deployment.
+
+## Contents
+
+- [Get started](#get-started)
+- [What the app does](#what-the-app-does)
+- [Project layout](#project-layout)
+- [Scoring and shared data](#scoring-and-shared-data)
+- [Data, sync and authentication](#data-sync-and-authentication)
+- [Reports and analytics](#reports-and-analytics)
+- [Brand assets](#brand-assets)
+- [Deploy to GitHub Pages](#deploy-to-github-pages)
+- [Current limitations](#current-limitations)
+
+## Get started
+
+### Requirements
+
+- Node.js 22 (the GitHub Actions workflow uses Node.js 22)
+- npm
+- Python 3 and Pillow, only if rebuilding brand assets
+
+### Run locally
+
+```bash
+npm ci
 npm test
-npm run dev                 # without VITE_API_URL the app runs on the phone only, with no sign-in
+npm run dev
 ```
-Copy `.env.example` to `.env` and set `VITE_API_URL` to talk to a server (sign-in switches on automatically).
 
-## The shared/ folder is a copy
-`audex-api` has the identical `shared/` folder. If the checklist or scoring rules change, change **both** copies. The tests in each
-repository run the same `scoring-fixtures.json`, so a copy that drifts makes tests fail.
+The app runs without an API connection. To connect it to a server, copy `.env.example` to `.env` and set `VITE_API_URL`:
 
-## Scoring rule sets
-| Code | Status | What it does |
-| --- | --- | --- |
-| `WPC_V1` | **Active (default)** | The current WPC sheet: 95% / 85% thresholds, Critical Non-Compliant override |
-| `WPC_V2_PROPOSED` | Pending IPC approval | V1 plus four caps (see the proposal doc): Critical Partial, 3+ Major failures, high-risk section under 85%, N/A over 10% flags review |
+```dotenv
+VITE_API_URL=http://localhost:8080
+```
 
-Switch the default in `src/scoring/catalog.ts` (`activeRuleSetCode`). Every audit stores the rule set it was
-scored under, so past results and trends are never silently re-scored. Thresholds are integer tenths of a percent and
-points are half-points, so every comparison is exact in both Java and TypeScript.
+Restart the dev server after changing environment variables. Keep real secrets out of frontend environment variables: values prefixed with `VITE_` are included in the browser build.
 
-## Brand
-The logo artwork in `brand/source/` is the single source. `python3 tools/build_brand_assets.py` derives everything from it:
-favicon, home-screen icons (standard, maskable and Apple), the white and teal lockups, the unframed A mark, one-colour
-marks, `manifest.webmanifest` and the colour variables in `src/brand.css` (teal `#0b4d60`, amber `#f29934`,
-both sampled from the artwork).
+### Available scripts
 
-| Where | Asset |
+| Command | What it does |
 | --- | --- |
-| Browser tab, bookmarks | `favicon.ico`, `favicon-32.png` |
-| Android home screen / install | `icons/icon-*.png`, `icons/maskable-*.png` via the manifest |
-| iPhone home screen | `apple-touch-icon.png` (full-bleed; iOS rounds it) |
-| App header (teal bar) | `logo/audex-lockup-white.png` |
-| Cold-start splash, empty states | `logo/audex-mark.png` |
-| PDF report header, light pages | `logo/audex-lockup.png` |
-| Print / one-colour use | `logo/audex-mark-mono-dark.png`, `logo/audex-mark-mono-white.png` |
+| `npm run dev` | Start the Vite development server |
+| `npm test` | Run the Vitest test suite |
+| `npm run typecheck` | Check TypeScript types without emitting files |
+| `npm run build` | Type-check and create a production build in `dist/` |
 
-The artwork is raster (PNG). Ask Copilot for an SVG version if you want perfectly sharp logos at any size.
+## What the app does
 
-## Dashboard and PDF report
+- **Phone-first audits:** answer checklist items, track progress, add notes and capture photos for failed or partial items.
+- **Offline use:** keep drafts and audit data on the device, then resume audits without a connection.
+- **Consistent scoring:** score against versioned rules and preserve the rule set used for each finalized audit.
+- **Dashboard:** explore audit trends, status breakdowns, weaker sections and recurring failures, with table views for charts.
+- **PDF reports:** create reports on-device, including audit details, profile information and photos.
+- **Installable PWA:** cache the app for offline launch and add it to a device home screen.
+- **Optional accounts and sync:** connect to `audex-api` for sign-in, account management and audit uploads.
 
-- `src/analytics/` - `computeAnalytics()` is the single source for both the dashboard and the PDF, so the numbers agree. Periods: presets or a custom range; KPIs compare with the previous equal-length period; training effect compares the 90 days before and after each logged session (needs 2+ audits per side to count).
-- `src/components/dashboard/` - filter row, hero figure, status split, trend chart (training markers), weakest sections, "Does training help?", recurring failures. Every chart has a Table view.
-- `src/report/pdf.ts` - client-side jsPDF report (works offline), "Prepared by" taken from `src/config.ts`. Filename `AudEx-report_<from>_to_<to>.pdf`.
-- **Demo data:** until audits are saved to the server, the dashboard runs on made-up sites from `analytics/demo.ts` (clearly labelled on screen and in the PDF). Replace `useDashboardData` with the real read.
-- Backend migration `V2__training_sessions.sql` adds the `training_session` table.
+## Project layout
 
-## Saving, sync and training log
+| Path | Purpose |
+| --- | --- |
+| `src/` | React app, audit and site storage, scoring, authentication, analytics and PDF reports |
+| `public/` | PWA manifest, icons, logos and launch screens |
+| `shared/` | Checklist template, scoring rules and shared scoring fixtures |
+| `brand/source/` | Source artwork for the app's visual identity |
+| `brand/exports/` | Generated brand assets |
+| `tools/build_brand_assets.py` | Generate the app's icons, logos and splash images |
+| `.github/workflows/pages.yml` | Test, build and deploy the app to GitHub Pages |
 
-- Audits are saved on the device as you answer (resume from "Your audits"); "Finalise audit" needs every item answered and freezes the result under the audit's own rule set.
-- Sites (with unit manager and housekeeping supervisor) and training sessions are also stored on the device.
-- Sync: set `VITE_API_URL` (e.g. your Railway URL) when building the app. Finalised audits are sent with `PUT /api/audits/{id}` whenever the phone is online; the client-made id makes retries safe. Without `VITE_API_URL`, audits simply stay on the device.
-- Server: `AuditSyncController` re-scores the answers itself and upserts site, audit and responses. Set `AUDEX_ALLOWED_ORIGINS` to the web app's address. **Not yet run:** Maven is blocked in the build environment, so test this against a real Postgres before relying on it.
-- N/A answers need a written reason before an audit can be finalised; it is sent to the server and printed in the audit PDF.
-- Photos: taken with the phone camera on failed/partial items (and one for the site as a whole), shrunk to about 200 KB, stored in IndexedDB, uploaded after their audit syncs to `PUT /api/audits/{id}/photos/{photoId}`, and shown in the audit PDF. The server keeps them in the Railway storage bucket: set `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` to match the bucket's variables (untested until the bucket exists).
-- Not yet built: sites and training syncing to the server, login, pulling server data to a second device.
+The backend is maintained separately in the private **`audex-api`** repository.
 
-## Image sizes
+## Scoring and shared data
 
-- Photos: long edge 1600 px, WebP at quality 0.82 (steps down to 0.72 only if a photo is still over 400 KB), JPEG fallback where the browser cannot encode WebP. The PDF uses a small JPEG copy because jsPDF cannot embed WebP.
-- Logos: `tools/build_brand_assets.py` also writes `audex-lockup-white.webp` (header) and `audex-mark.webp` (boot splash), sized at 3x their display size, with the PNG kept as a fallback. Install icons, the iOS icon, the favicon and the PDF logo stay PNG on purpose.
+| Rule set | Status | Summary |
+| --- | --- | --- |
+| `WPC_V1` | Active default | WPC thresholds (95% / 85%) with a Critical Non-Compliant override |
+| `WPC_V2_PROPOSED` | Proposed | Adds review caps for Critical Partial, 3+ Major failures, a high-risk section below 85%, and N/A above 10% |
 
-## Splash screen
+The active default is selected in `src/scoring/catalog.ts`. Each audit keeps the rule set it was scored against, so changes to current rules do not silently alter historical results. Scores use integer tenths of a percent and half-point increments for exact comparisons.
 
-- In-app: `index.html` shows a teal splash (white lockup, "Audit with confidence", sweeping amber line) until React mounts; `main.tsx` keeps it up for at least 0.8 s and fades it out.
-- Android builds its launch screen from the manifest (teal `background_color` + icon). iPhone launch images for 12 screen sizes are generated into `public/splash/` and linked in `index.html` by `tools/build_brand_assets.py`. A new iPhone size needs one more row in that script's `SPLASH` list.
+The `shared/` directory is copied between this repository and `audex-api`. When the checklist, scoring rules or fixtures change, update both copies. Both repositories should run their tests against the same `scoring-fixtures.json` to catch drift.
 
-## Offline and ease of use
+## Data, sync and authentication
 
-- A service worker (vite-plugin-pwa) caches the whole app on first visit, so it opens with no signal; tested by going offline, reloading, finishing an audit and downloading its PDF.
-- The app asks the browser to keep stored audits safe (`storage.persist`) and suggests adding it to the home screen.
-- Audit screen: progress ("42 of 264 answered"), per-section counts, "Next item to complete" button, large colour-and-icon answer buttons, "How to answer" help, a confirmation before finalising, and a confirmation before deleting a draft. The scoring-rules choice is tucked under "Advanced".
+### Local data and synchronization
 
-## Settings, profile and dark mode
+Audit drafts are saved on the device as the auditor works. Finalizing an audit requires all items to be answered and records its result under the selected rule set. Sites, training sessions, profile settings and photos are also stored locally; photos use IndexedDB.
 
-- Gear icon in the header opens Settings: Appearance (Light, Dark, Match my phone), Your profile (name, job title, optional email and phone) and Account.
-- The profile is stored on the phone and is printed as the author on every PDF; each audit keeps the name that was active when it was started, and the server stores it as the auditor. Default: Chernay Hildebrandt, Housekeeping Trainer.
-- Sign-in and password management are not built; the Account section says so. They go in the same screen once login exists.
-- Theme: colours are tokens in `styles.css` (light, dark, and a media query for "Match my phone"). The saved choice is applied by a small script in `index.html` before first paint, so there is no flash. PDFs are always light.
+When `VITE_API_URL` is configured, finalized audits are uploaded to `PUT /api/audits/{id}` when the device is online. Client-generated IDs make retries safe. Photos upload after their audit syncs to `PUT /api/audits/{id}/photos/{photoId}`. Without the API URL, audits remain on the device.
 
-## Sign-in, sign-out, username recovery and password reset
+### Accounts
 
-Turns on automatically when the app is built with `VITE_API_URL`; without it the app opens straight in, as before.
+With the API configured, the app provides first-account setup, sign-in, password and email changes, sign-out, username recovery and password reset. Sessions support offline app use; signing out does not delete locally saved audits.
 
-**How it behaves for the auditor**
-- First time only: a setup screen creates the account (needs the setup code, and only works while no account exists).
-- Sign in with username and password (username is not case sensitive). Show/Hide on password boxes.
-- Once signed in, the app opens instantly and works with no signal. The sign-in lasts 30 days of use (90 days at most).
-- If the server ever ends the sign-in, the person lands on the sign-in screen with "Your audits are safe on this phone". Audits are never deleted by signing out.
-- Settings > Account: change password, change email (asks for the password), Sign out (warns if audits have not uploaded), Sign out everywhere.
-- Forgot username: enter email, get the username by email. Forgot password: enter username or email, get a link valid 30 minutes, usable once. Both screens give the same answer whether or not the account exists.
+Password and recovery protections are enforced by the server. The documented design uses BCrypt password hashes, single-use reset tokens stored as hashes, generic recovery responses and rate limits. **Do not expose server credentials in this frontend repository.**
 
-**Security design**
-- Passwords: BCrypt (cost 12), 10 to 128 characters, no composition rules, rejects common passwords, repeated characters, and passwords containing the username or email name.
-- Tokens: random 256-bit, only a SHA-256 hash is stored. Reset tokens are single-use; a new request cancels older ones; a reset signs out every device and sends a "your password was changed" email.
-- Unknown usernames take the same time as wrong passwords. Failures are slowed: 5 per 15 min per username, 30 per 15 min per address; recovery requests 3 per hour; password confirmations 5 per 15 min.
-- Every `/api` call except `/api/auth/**` needs `Authorization: Bearer <token>`. The audit's auditor is stamped from the signed-in account (`audit.created_by`).
+### Server configuration
 
-**Server settings (Railway variables)**
+Configure these variables in the server's hosting environment, not in the web app:
+
 | Variable | Purpose |
-|---|---|
-| `AUDEX_SETUP_CODE` | Required once, to create the first account. Remove it afterwards. |
-| `AUDEX_APP_URL` | Address of the web app, used in the reset link (for example `https://audex.example.co.za`). |
-| `AUDEX_ALLOWED_ORIGINS` | Same address, so the browser may call the API. |
-| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | Outgoing email (SMTP). Without them, emails are written to the server log instead of sent, which means recovery will not work for real. |
-| `AUDEX_MAIL_FROM` | The "from" address. |
+| --- | --- |
+| `AUDEX_SETUP_CODE` | One-time code for creating the first account; remove it after setup |
+| `AUDEX_APP_URL` | Public web-app origin used in password-reset links |
+| `AUDEX_ALLOWED_ORIGINS` | Origin allowed to call the API from a browser |
+| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | SMTP configuration for account recovery emails |
+| `AUDEX_MAIL_FROM` | Sender address for account emails |
+| `BUCKET`, `ENDPOINT`, `REGION`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY` | Object-storage configuration for uploaded photos |
 
-The web host must serve `index.html` for `/reset-password` (single-page-app fallback). Vite preview does this; for Railway static hosting or Caddy/nginx, add the fallback rule.
+Account recovery requires working email delivery. Photo storage requires a configured bucket. For reset links, the web host must route `/reset-password` to the app; Vite preview supports the single-page-app fallback.
 
-**Testing status**: the browser flows (setup, sign-in, wrong password, offline open, forced sign-out, forgot username/password, reset link, reuse of a link, sign out everywhere) pass against a mock server (`tools` do not include it). The Java auth rules pass a javac harness (`tools/AuthHarness.java`). The Spring controllers and SQL could not be run where this was built (Maven Central unreachable), so run `mvn test` and one real sign-in against a database before relying on them.
+## Reports and analytics
 
-## Hosting on GitHub Pages (free)
+The dashboard and PDF report share `computeAnalytics()` in `src/analytics/`, keeping their calculations aligned. Date filters include presets and custom ranges; period KPIs compare against the previous period of equal length. Training effect compares audit results in the 90 days before and after a session, and needs at least two audits on each side.
 
-`.github/workflows/pages.yml` tests, builds and publishes the app whenever `main` changes. This repository is **public** so Pages is free.
-Nothing secret belongs here: the server address is public anyway, and every password and key lives in the server's variables. Never commit a `.env` file.
+Until server-backed audits are available to the dashboard, it uses clearly labelled demo data from `src/analytics/demo.ts`. Reports are generated in the browser with jsPDF and work offline.
 
-One-time setup:
-1. Push this folder as the repository `audex-web`.
-2. **Settings > Pages > Source: GitHub Actions**.
-3. **Settings > Secrets and variables > Actions > Variables**: add `AUDEX_API_URL` = your Railway API address (no trailing slash).
-4. **Settings > Pages > Custom domain**: a sub-domain such as `audex.mrhdigital.co.za` (DNS `CNAME` to `<your-github-user>.github.io`), tick **Enforce HTTPS**.
-5. On the server set `AUDEX_APP_URL` and `AUDEX_ALLOWED_ORIGINS` to that same `https://...` address.
+## Brand assets
 
-Why a custom domain: the app expects to live at the root of its address; `user.github.io/audex-web/` would break icons, the offline cache and reset links.
-The workflow copies `index.html` to `404.html` so password-reset links from email open the app.
+The logo artwork in `brand/source/` is the source of truth. To regenerate the icons and logos:
+
+```bash
+python tools/build_brand_assets.py
+```
+
+The script updates the generated assets in `brand/exports/`, `public/` and the colour tokens in `src/brand.css`. It requires Python 3 and Pillow.
+
+Photos are resized to a 1600 px long edge and encoded as WebP where supported, with a JPEG fallback. The PDF uses JPEG copies because jsPDF cannot embed WebP. PNG remains intentional for install icons, the Apple touch icon, favicons and the PDF logo.
+
+## Deploy to GitHub Pages
+
+The workflow in `.github/workflows/pages.yml` runs tests and builds the site when changes are pushed to `main`, then deploys it to GitHub Pages.
+
+1. Push the project to a **public** GitHub repository.
+2. In **Settings → Pages**, set the source to **GitHub Actions**.
+3. In **Settings → Secrets and variables → Actions → Variables**, add `AUDEX_API_URL` with the API origin (no trailing slash).
+4. Optionally configure a custom domain in **Settings → Pages** and enforce HTTPS.
+5. Set `AUDEX_APP_URL` and `AUDEX_ALLOWED_ORIGINS` on the server to the deployed app's HTTPS origin.
+
+The workflow copies `index.html` to `404.html` so emailed password-reset links can load the single-page app on GitHub Pages. A custom domain is recommended because the app expects to be served from the root of its origin; a project subpath can break icons, offline caching and reset links.
+
+## Current limitations
+
+- Sites and training sessions do not sync to the server.
+- Server data is not pulled onto a second device; local audits remain on the device where they were created.
+- The dashboard currently uses labelled demo data until connected to real server-backed audit data.
+- Validate the Spring controllers, SQL and photo-storage integration against a real database and bucket before relying on them in production.
+
+The web workflow runs `npm test` and `npm run build`. The server-side integration still needs its own end-to-end validation in the target hosting environment.
+
+---
+
+### Developed by Mr. H Digital
+
+![Mr. H Digital — Digital Solutions for Growing Businesses](public/logo/mrh-digital-logo-transparent.png)
