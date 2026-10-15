@@ -1,0 +1,31 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE metadata and generated output
+.idea/
+out/
+
+# Claude-related files and folders, at any depth and regardless of name casing
+*[Cc][Ll][Aa][Uu][Dd][Ee]*
