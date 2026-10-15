@@ -147,11 +147,11 @@ The workflow in `.github/workflows/pages.yml` runs tests and builds the site whe
 
 1. Push the project to a **public** GitHub repository.
 2. In **Settings → Pages**, set the source to **GitHub Actions**.
-3. In **Settings → Secrets and variables → Actions → Variables**, add `AUDEX_API_URL` with the API origin (no trailing slash).
-4. Optionally configure a custom domain in **Settings → Pages** and enforce HTTPS.
-5. Set `AUDEX_APP_URL` and `AUDEX_ALLOWED_ORIGINS` on the server to the deployed app's HTTPS origin.
+3. In **Settings → Secrets and variables → Actions → Variables**, add `AUDEX_API_URL` with `https://audex-api.mrhdigital.co.za` (no trailing slash).
+4. In **Settings → Pages → Custom domain**, enter `audex.mrhdigital.co.za` and save. In your DNS provider, create a `CNAME` record for `audex` pointing to `mr-h-digital.github.io`. Enable **Enforce HTTPS** once DNS verification completes.
+5. Configure the backend host to serve the API at `https://audex-api.mrhdigital.co.za`. Set `AUDEX_APP_URL` and `AUDEX_ALLOWED_ORIGINS` on the server to the frontend origin, `https://audex.mrhdigital.co.za`.
 
-The workflow copies `index.html` to `404.html` so emailed password-reset links can load the single-page app on GitHub Pages. A custom domain is recommended because the app expects to be served from the root of its origin; a project subpath can break icons, offline caching and reset links.
+The repository's `public/CNAME` file preserves the custom domain in the published site. The workflow also copies `index.html` to `404.html` so emailed password-reset links can load the single-page app on GitHub Pages. The app expects to be served from the root of its origin; a project subpath can break icons, offline caching and reset links.
 
 ## Current limitations
 
