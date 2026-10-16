@@ -26,7 +26,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
   );
 
   return (
-    <div className="dash">
+    <div className="dash settings-page">
       <h1 className="pagetitle">Settings</h1>
 
       <section className="card">

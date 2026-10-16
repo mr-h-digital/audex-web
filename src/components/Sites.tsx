@@ -28,7 +28,7 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
   );
 
   return (
-    <div className="dash">
+    <div className="dash sites-page">
       <form className="card form" onSubmit={submit}>
         <h2>{editing ? "Edit site" : "Add a site"}</h2>
         {field("name", "Site name (e.g. clinic, hospital or village)", true)}

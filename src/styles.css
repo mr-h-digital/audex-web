@@ -239,3 +239,136 @@ details:not([open]) > summary::after { content: "▸"; }
 .confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--line-strong); border-radius: 10px; font-size: .9rem; }
 .confirm p { margin: 0; }
 .subform { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--grid); }
+
+/* ---- responsive app shell and narrow-screen overflow protection ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { min-width: 320px; }
+.app { width: 100%; min-width: 0; }
+.app > *, .app-content, .dash > *, .card, .audit-page > * { min-width: 0; }
+.app-content { padding-top: 12px; }
+.brand-header { min-width: 0; }
+.brand-header__logo { max-width: 55vw; height: auto; max-height: 36px; }
+.brand-header__tools { min-width: 0; }
+.syncbadge { max-width: 34vw; overflow-wrap: anywhere; text-align: right; }
+.field > input, .field > select { width: 100%; min-width: 0; }
+.daterow > label { flex: 1 1 140px; min-width: 0; }
+.daterow input { width: 100%; min-width: 0; }
+.card__head h2 { min-width: 0; }
+.kpi, .setrow, .trow__head > span { min-width: 0; overflow-wrap: anywhere; }
+.trow__head strong { flex: none; white-space: nowrap; }
+.chart svg { max-width: 100%; }
+.tablewrap { max-width: 100%; }
+.tooltip { max-width: calc(100% - 8px); white-space: normal; }
+.sitelist li, .auditlist li { min-width: 0; }
+.sitelist li > div:first-child, .auditlist li > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.audit-page { display: grid; gap: 8px; min-width: 0; }
+.audit-page > .auditing, .audit-page > .score, .audit-page > .banner,
+.audit-page > .form, .audit-page > .howto, .audit-page > .finalbar { grid-column: 1 / -1; }
+.tabbar__settings { display: none; }
+
+@media (max-width: 480px) {
+  .chips { flex-wrap: wrap; overflow-x: visible; }
+  .sitelist li, .auditlist li { align-items: flex-start; flex-direction: column; }
+  .sitelist__btns { flex-wrap: wrap; }
+  .auditing { align-items: flex-start; flex-wrap: wrap; }
+  .card__head { align-items: flex-start; flex-wrap: wrap; }
+  .filters__row > * { min-width: 0; }
+}
+
+@media (min-width: 900px) {
+  .app {
+    display: grid;
+    grid-template-columns: 224px minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "status status"
+      "nav content";
+    column-gap: 24px;
+    align-content: start;
+    max-width: 1600px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 0 32px 32px;
+  }
+  .brand-header {
+    grid-area: header;
+    margin: 0 -32px;
+    padding-right: 32px;
+    padding-left: 32px;
+    border-radius: 0 0 16px 16px;
+  }
+  .app > .offline { grid-area: status; }
+  .tabbar {
+    grid-area: nav;
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    display: grid;
+    gap: 8px;
+    height: max-content;
+    padding: 16px 0;
+    border: 0;
+    background: transparent;
+  }
+  .tabbar button {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+    border-radius: 10px;
+    text-align: left;
+    font-size: .95rem;
+  }
+  .tabbar button[aria-current="page"] {
+    background: var(--surface);
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .tabbar__settings { display: block; }
+  .app-content { grid-area: content; padding-top: 24px; }
+  .dash { gap: 16px; }
+  .dashboard-page, .settings-page, .sites-page, .start-page, .audit-page {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+  }
+  .dashboard-page > .banner, .dashboard-page > .filters, .dashboard-page > .kpis,
+  .dashboard-page > .small, .dashboard-page > .empty { grid-column: 1 / -1; }
+  .dashboard-page > .hero {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(200px, .65fr) minmax(0, 1.35fr);
+    align-items: center;
+    gap: 20px;
+  }
+  .hero__summary { min-width: 0; }
+  .hero__delta { overflow-wrap: anywhere; }
+  .hero__outcomes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(135px, .65fr);
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+  .hero__outcomes .legend { margin-top: 0; }
+  .settings-page > .pagetitle, .settings-page > :nth-child(n + 4),
+  .sites-page > :last-child { grid-column: 1 / -1; }
+  .audit-page { gap: 12px; }
+  .audit-page > .auditing, .audit-page > .score, .audit-page > .banner,
+  .audit-page > .form, .audit-page > .howto, .audit-page > .finalbar { grid-column: 1 / -1; }
+  .app-content .card { padding: 20px; }
+  .app-content .pagetitle { margin: 0; }
+  .app.authpage {
+    display: block;
+    max-width: 640px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 0 24px 32px;
+  }
+  .authpage .brand-header { margin: 0 -24px; padding-right: 24px; padding-left: 24px; }
+  .authcard { max-width: 520px; margin: 32px auto 0; }
+}
+
+@media (min-width: 1400px) {
+  .app { grid-template-columns: 248px minmax(0, 1fr); column-gap: 32px; }
+  .dashboard-page { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-page > .banner, .dashboard-page > .filters, .dashboard-page > .kpis,
+  .dashboard-page > .small, .dashboard-page > .empty { grid-column: 1 / -1; }
+}

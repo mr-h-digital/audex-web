@@ -108,34 +108,37 @@ function Main({ auth }: { auth: Auth }) {
       </BrandHeader>
       {!online && <p className="offline" role="status">You are offline. That is fine: keep working and everything is saved on this phone.</p>}
 
-      {tab === "dashboard" && <Dashboard real={real} author={{ name: profile.name, role: roleLine(profile) }} />}
-      {tab === "settings" && <Settings profile={profile} onSaveProfile={onSaveProfile} theme={theme} onTheme={setTheme} auth={auth} unsynced={queued} />}
-      {tab === "sites" && <Sites sites={sites} onAdd={add} onUpdate={update} onArchive={archive}
-        training={training.sessions} onAddTraining={training.add} onRemoveTraining={training.remove} />}
-      {tab === "audit" && (current
-        ? <AuditScreen audit={current} onChange={save} onClose={() => setOpenId(null)} />
-        : <>
-          <section className="card startaudit">
-            <h2>Start an audit</h2>
-            {active.length === 0 ? <><p className="empty">Add the site you are auditing first.</p>
-              <button type="button" className="btn" onClick={() => setTab("sites")}>Add a site</button></> : <>
-              <label className="field">Site<select value={siteId} onChange={(e) => setSiteId(e.target.value)}>
-                <option value="">Choose a site…</option>{active.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
-              <label className="field">Audit date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-              <button type="button" className="btn" disabled={!siteId} onClick={start}>Start audit</button>
-              <details className="adv"><summary>Scoring rules (advanced)</summary>
-                <select aria-label="Scoring rules" value={ruleCode} onChange={(e) => setRuleCode(e.target.value)}>
-                  {ruleSets.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}</select>
-                <p className="small">Leave this on the current WPC rules unless you have been told to change it.</p></details></>}
-            {!installed() && <p className="tip">Tip: add AudEx to your home screen (in your browser menu, choose Add to Home Screen). That keeps your audits safe on this phone and opens the app faster.</p>}
-          </section>
-          <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deletePhoto(ph.id).catch(() => undefined)); remove(id); }} />
-        </>)}
-
       <nav className="tabbar" aria-label="Main">
         {(["audit", "sites", "dashboard"] as const).map((t) => (
           <button key={t} type="button" aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}>{t === "audit" ? "Audit" : t === "sites" ? "Sites" : "Dashboard"}</button>))}
+        <button className="tabbar__settings" type="button" aria-current={tab === "settings" ? "page" : undefined} onClick={() => setTab("settings")}>Settings</button>
       </nav>
+
+      <section className="app-content">
+        {tab === "dashboard" && <Dashboard real={real} author={{ name: profile.name, role: roleLine(profile) }} />}
+        {tab === "settings" && <Settings profile={profile} onSaveProfile={onSaveProfile} theme={theme} onTheme={setTheme} auth={auth} unsynced={queued} />}
+        {tab === "sites" && <Sites sites={sites} onAdd={add} onUpdate={update} onArchive={archive}
+          training={training.sessions} onAddTraining={training.add} onRemoveTraining={training.remove} />}
+        {tab === "audit" && (current
+          ? <AuditScreen audit={current} onChange={save} onClose={() => setOpenId(null)} />
+          : <div className="start-page">
+            <section className="card startaudit">
+              <h2>Start an audit</h2>
+              {active.length === 0 ? <><p className="empty">Add the site you are auditing first.</p>
+                <button type="button" className="btn" onClick={() => setTab("sites")}>Add a site</button></> : <>
+                <label className="field">Site<select value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+                  <option value="">Choose a site…</option>{active.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
+                <label className="field">Audit date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+                <button type="button" className="btn" disabled={!siteId} onClick={start}>Start audit</button>
+                <details className="adv"><summary>Scoring rules (advanced)</summary>
+                  <select aria-label="Scoring rules" value={ruleCode} onChange={(e) => setRuleCode(e.target.value)}>
+                    {ruleSets.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}</select>
+                  <p className="small">Leave this on the current WPC rules unless you have been told to change it.</p></details></>}
+              {!installed() && <p className="tip">Tip: add AudEx to your home screen (in your browser menu, choose Add to Home Screen). That keeps your audits safe on this phone and opens the app faster.</p>}
+            </section>
+            <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deletePhoto(ph.id).catch(() => undefined)); remove(id); }} />
+          </div>)}
+      </section>
     </main>
   );
 }
@@ -203,7 +206,7 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
   const answered = (code: string) => sections.find((s) => s.code === code)!.items.filter((i) => audit.answers[i.key] !== undefined).length;
 
   return (
-    <>
+    <div className="audit-page">
       <p className="auditing"><span><strong>{audit.siteName}</strong><br />{fmtDate(audit.date)}</span>
         <button type="button" className="chip" onClick={onClose}>Back to audits</button></p>
       <ScorePanel score={score} rules={rules} answered={TOTAL_ITEMS - score.unanswered} total={TOTAL_ITEMS} />
@@ -271,6 +274,6 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
           ) : (
             <button type="button" className="btn btn--wide" onClick={() => setConfirming(true)}>Finalise audit</button>)}
         </div>)}
-    </>
+    </div>
   );
 }

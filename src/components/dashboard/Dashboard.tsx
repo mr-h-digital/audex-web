@@ -38,7 +38,7 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
   };
 
   return (
-    <div className="dash">
+    <div className="dash dashboard-page">
       {data.demo
         ? <p className="banner">Demo data: made-up sites and audits, not real results.{real.audits.length === 0 ? " Finalise an audit and your real results appear here." : " "}
           {real.audits.length > 0 && <button type="button" className="linkbtn" onClick={() => setForceDemo(false)}>Show my audits</button>}</p>
@@ -50,21 +50,25 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
       {k.audits === 0 ? <p className="empty card">No finalised audits in this period. Try a longer period or another site.</p> : (
         <>
           <section className="card hero">
-            <div className="hero__label">Average compliance</div>
-            <div className="hero__num">{k.avgPercent}%</div>
-            <div className="hero__delta">
-              {k.deltaPoints === null ? "No earlier period to compare with."
-                : <>{k.deltaPoints > 0 ? "▲" : k.deltaPoints < 0 ? "▼" : "■"} {sign(k.deltaPoints)} pts vs previous {period.days} days ({k.prevAvgPercent}%)</>}
+            <div className="hero__summary">
+              <div className="hero__label">Average compliance</div>
+              <div className="hero__num">{k.avgPercent}%</div>
+              <div className="hero__delta">
+                {k.deltaPoints === null ? "No earlier period to compare with."
+                  : <>{k.deltaPoints > 0 ? "▲" : k.deltaPoints < 0 ? "▼" : "■"} {sign(k.deltaPoints)} pts vs previous {period.days} days ({k.prevAvgPercent}%)</>}
+              </div>
             </div>
-            <div className="split" role="img" aria-label="Audit outcomes">
-              {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).map((s) => k.statusCounts[s] > 0 && (
-                <div key={s} style={{ width: `${(100 * k.statusCounts[s]) / total}%`, background: STATUS_META[s].color }} />))}
+            <div className="hero__outcomes">
+              <div className="split" role="img" aria-label="Audit outcomes">
+                {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).map((s) => k.statusCounts[s] > 0 && (
+                  <div key={s} style={{ width: `${(100 * k.statusCounts[s]) / total}%`, background: STATUS_META[s].color }} />))}
+              </div>
+              <ul className="legend legend--col">
+                {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).map((s) => (
+                  <li key={s}><span className="tag__icon" style={{ background: STATUS_META[s].color }} aria-hidden>{STATUS_META[s].icon}</span>
+                    {STATUS_META[s].label}: <strong>{k.statusCounts[s]}</strong></li>))}
+              </ul>
             </div>
-            <ul className="legend legend--col">
-              {(Object.keys(STATUS_META) as (keyof typeof STATUS_META)[]).map((s) => (
-                <li key={s}><span className="tag__icon" style={{ background: STATUS_META[s].color }} aria-hidden>{STATUS_META[s].icon}</span>
-                  {STATUS_META[s].label}: <strong>{k.statusCounts[s]}</strong></li>))}
-            </ul>
           </section>
 
           <div className="kpis">
