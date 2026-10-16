@@ -268,11 +268,17 @@ html, body, #root { min-width: 320px; }
 
 @media (max-width: 480px) {
   .chips { flex-wrap: wrap; overflow-x: visible; }
+  .filters__row > .sitesel, .filters__row > .btn { flex-basis: 100%; }
   .sitelist li, .auditlist li { align-items: flex-start; flex-direction: column; }
   .sitelist__btns { flex-wrap: wrap; }
   .auditing { align-items: flex-start; flex-wrap: wrap; }
   .card__head { align-items: flex-start; flex-wrap: wrap; }
   .filters__row > * { min-width: 0; }
+}
+
+@media (max-width: 600px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 @media (min-width: 900px) {
