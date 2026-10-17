@@ -21,6 +21,8 @@ import { useSites } from "./sites/store";
 import { API_URL, pending, syncPending, syncPhotos } from "./sync/sync";
 import { AuthGate } from "./components/auth/AuthGate";
 import type { Auth } from "./auth/useAuth";
+import { Navigation, type Page } from "./components/Navigation";
+import { PageHeading } from "./components/PageHeading";
 
 const RESULTS: { value: Result; label: string; icon: string; cls: string }[] = [
   { value: "COMPLIANT", label: "Compliant", icon: "✓", cls: "c" },
@@ -39,7 +41,7 @@ export default function App() {
 }
 
 function Main({ auth }: { auth: Auth }) {
-  const [tab, setTab] = useState<"audit" | "sites" | "dashboard" | "settings">("audit");
+  const [tab, setTab] = useState<Page>("audit");
   const [profile, saveProfile] = useProfile();
   const [theme, setTheme] = useTheme();
   const { sites, add, update, archive } = useSites();
@@ -108,13 +110,10 @@ function Main({ auth }: { auth: Auth }) {
       </BrandHeader>
       {!online && <p className="offline" role="status">You are offline. That is fine: keep working and everything is saved on this phone.</p>}
 
-      <nav className="tabbar" aria-label="Main">
-        {(["audit", "sites", "dashboard"] as const).map((t) => (
-          <button key={t} type="button" aria-current={tab === t ? "page" : undefined} onClick={() => setTab(t)}>{t === "audit" ? "Audit" : t === "sites" ? "Sites" : "Dashboard"}</button>))}
-        <button className="tabbar__settings" type="button" aria-current={tab === "settings" ? "page" : undefined} onClick={() => setTab("settings")}>Settings</button>
-      </nav>
+      <Navigation page={tab} onNavigate={setTab} />
 
       <section className="app-content">
+        {tab === "audit" && <PageHeading title="Audit" description="Start a housekeeping audit or continue a saved audit." />}
         {tab === "dashboard" && <Dashboard real={real} author={{ name: profile.name, role: roleLine(profile) }} />}
         {tab === "settings" && <Settings profile={profile} onSaveProfile={onSaveProfile} theme={theme} onTheme={setTheme} auth={auth} unsynced={queued} />}
         {tab === "sites" && <Sites sites={sites} onAdd={add} onUpdate={update} onArchive={archive}

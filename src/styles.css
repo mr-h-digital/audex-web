@@ -66,6 +66,15 @@ fieldset label { display: inline-flex; align-items: center; gap: 4px; margin: 0 
   padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
 .tabbar button { flex: 1; min-height: 56px; border: 0; background: transparent; font-size: 1rem; font-weight: 600; color: var(--muted); }
 .tabbar button[aria-current="page"] { color: var(--brand-ink); box-shadow: inset 0 3px 0 var(--accent); }
+.tabbar__heading, .tabbar svg { display: none; }
+.tabbar button:focus-visible, .gear:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: -4px;
+}
+.tabbar button:hover { background: var(--track); }
+.page-heading { grid-column: 1 / -1; }
+.page-heading .pagetitle { margin: 0; font-size: 1.5rem; }
+.page-heading .small { margin: 6px 0 0; }
+.app-content > .page-heading { margin-bottom: 16px; }
 
 /* ---- dashboard ---- */
 
@@ -314,25 +323,40 @@ html, body, #root { min-width: 320px; }
     display: grid;
     gap: 8px;
     height: max-content;
-    padding: 16px 0;
-    border: 0;
-    background: transparent;
+    margin-top: 24px;
+    padding: 16px 12px;
+    border: 1px solid #326171;
+    border-radius: 16px;
+    background: #103e4c;
+    color: #fff;
   }
+  .tabbar__heading { display: block; padding: 4px 16px 12px; color: #c2dce4; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .tabbar svg { display: block; flex: none; width: 20px; height: 20px; }
   .tabbar button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
     min-height: 48px;
     padding: 0 16px;
     border-radius: 10px;
     text-align: left;
     font-size: .95rem;
+    color: #dcebf0;
+    font-weight: 500;
   }
+  .tabbar button:hover { background: #1d5263; color: #fff; }
   .tabbar button[aria-current="page"] {
-    background: var(--surface);
-    box-shadow: inset 3px 0 0 var(--accent);
+    background: #286276;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: inset 4px 0 0 var(--accent);
   }
-  .tabbar__settings { display: block; }
+  .tabbar .tabbar__settings { display: flex; }
   .app-content { grid-area: content; padding-top: 24px; }
-  .dash { gap: 16px; }
+  .dash { gap: 20px; padding-top: 0; }
+  .page-heading { padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .page-heading .pagetitle { font-size: 1.75rem; }
   .dashboard-page, .settings-page, .sites-page, .start-page, .audit-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
@@ -356,12 +380,13 @@ html, body, #root { min-width: 320px; }
     min-width: 0;
   }
   .hero__outcomes .legend { margin-top: 0; }
-  .settings-page > .pagetitle, .settings-page > :nth-child(n + 4),
+  .settings-page > .page-heading, .settings-page > :nth-child(n + 4),
   .sites-page > :last-child { grid-column: 1 / -1; }
   .audit-page { gap: 12px; }
   .audit-page > .auditing, .audit-page > .score, .audit-page > .banner,
   .audit-page > .form, .audit-page > .howto, .audit-page > .finalbar { grid-column: 1 / -1; }
   .app-content .card { padding: 20px; }
+  .app-content .card, .app-content .filters { border: 1px solid var(--grid); }
   .app-content .pagetitle { margin: 0; }
   .app.authpage {
     display: block;

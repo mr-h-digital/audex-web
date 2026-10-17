@@ -4,6 +4,7 @@ import type { TrainingSession } from "../analytics/types";
 import type { TrainingDraft } from "../audits/training";
 import { fmtDate } from "../analytics/dates";
 import type { AuditSite, SiteDraft } from "../sites/store";
+import { PageHeading } from "./PageHeading";
 
 const EMPTY: SiteDraft = { name: "", address: "", unitManager: "", supervisor: "" };
 
@@ -29,6 +30,7 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
 
   return (
     <div className="dash sites-page">
+      <PageHeading title="Sites" description="Manage your facilities, archived sites and training sessions." />
       <form className="card form" onSubmit={submit}>
         <h2>{editing ? "Edit site" : "Add a site"}</h2>
         {field("name", "Site name (e.g. clinic, hospital or village)", true)}

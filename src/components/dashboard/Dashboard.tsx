@@ -11,6 +11,7 @@ import { SectionBars, SectionTable, titleCase } from "./SectionBars";
 import { STATUS_META, StatusTag } from "./status";
 import { TrainingChart, TrainingTable } from "./TrainingEffect";
 import { TrendChart, TrendTable } from "./TrendChart";
+import { PageHeading } from "../PageHeading";
 
 const sign = (n: number) => (n > 0 ? "+" : "") + n;
 
@@ -39,6 +40,7 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
 
   return (
     <div className="dash dashboard-page">
+      <PageHeading title="Dashboard" description="Review compliance, trends and sites that need attention." />
       {data.demo
         ? <p className="banner">Demo data: made-up sites and audits, not real results.{real.audits.length === 0 ? " Finalise an audit and your real results appear here." : " "}
           {real.audits.length > 0 && <button type="button" className="linkbtn" onClick={() => setForceDemo(false)}>Show my audits</button>}</p>

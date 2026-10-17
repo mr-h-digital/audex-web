@@ -3,6 +3,7 @@ import { roleLine, validateProfile, type Profile } from "../profile/store";
 import type { Theme } from "../theme/theme";
 import type { Auth } from "../auth/useAuth";
 import { AccountSection } from "./auth/AccountSection";
+import { PageHeading } from "./PageHeading";
 
 const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: "light", label: "Light", icon: "☀" },
@@ -27,7 +28,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
 
   return (
     <div className="dash settings-page">
-      <h1 className="pagetitle">Settings</h1>
+      <PageHeading title="Settings" description="Manage your appearance, profile and account." />
 
       <section className="card">
         <h2>Appearance</h2>
