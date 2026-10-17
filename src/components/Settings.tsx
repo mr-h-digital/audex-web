@@ -58,6 +58,15 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
       <section className="card">
         <h2>About</h2>
         <div className="setrow"><div>AudEx<small>Housekeeping audits for WPC Health Care Division</small></div></div>
+        <div className="setrow"><span>Version</span><strong>{__APP_INFO__.version}</strong></div>
+        <div className="setrow"><span>Build</span><code>{__APP_INFO__.build}</code></div>
+        <div className="setrow"><span>Built on</span><time dateTime={__APP_INFO__.builtAt}>{new Date(__APP_INFO__.builtAt).toLocaleString(undefined, {
+          year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
+        })}</time></div>
+        <div className="setrow developer-credit">
+          <img src="/logo/mrh-digital-badge.webp" alt="Mr. H Digital logo" width={64} height={64} loading="lazy" />
+          <div><small>Developed by</small><strong>Mr. H Digital</strong></div>
+        </div>
       </section>
     </div>
   );

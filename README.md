@@ -131,6 +131,10 @@ Until server-backed audits are available to the dashboard, it uses clearly label
 
 ## Brand assets
 
+Settings > About shows the version from `package.json`, the short Git commit ID and the build date (UTC). Vite embeds these at build time, so offline installations show their own build details. GitHub Actions uses `GITHUB_SHA`; local builds use Git HEAD and append `-dirty` when there are uncommitted changes. Local builds require Git and a repository checkout. Update the package version when releasing a new version.
+
+Settings > About credits Mr. H Digital using the supplied badge, optimized as WebP at `public/logo/mrh-digital-badge.webp`.
+
 The logo artwork in `brand/source/` is the source of truth. To regenerate the icons and logos:
 
 ```bash
