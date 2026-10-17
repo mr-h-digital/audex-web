@@ -133,6 +133,8 @@ Until server-backed audits are available to the dashboard, it uses clearly label
 
 Desktop layouts (900 px and wider) use a distinct teal navigation panel with labelled icons, an active-page marker and keyboard-focus indicators. Page headings distinguish the workspace from navigation. Mobile keeps the existing bottom navigation.
 
+Dark-mode workspace screens use `src/assets/workspace-dark-background.webp`, optimized from the supplied artwork. This also applies when following a dark system theme. Light mode and the separate sign-in background are unchanged; content cards remain opaque for readability. The workspace image is included in the offline app cache.
+
 Settings > About shows the version from `package.json`, the short Git commit ID and the build date (UTC). Vite embeds these at build time, so offline installations show their own build details. GitHub Actions uses `GITHUB_SHA`; local builds use Git HEAD and append `-dirty` when there are uncommitted changes. Local builds require Git and a repository checkout. Update the package version when releasing a new version.
 
 Settings > About credits Mr. H Digital using the supplied badge, optimized as WebP at `public/logo/mrh-digital-badge.webp`.

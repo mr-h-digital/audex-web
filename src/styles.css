@@ -1,6 +1,7 @@
 /* ---- theme tokens: light by default, dark by choice (Settings) or by the phone's own setting ---- */
 :root {
   color-scheme: light;
+  --workspace-background: none;
   --bg: #f4f7f8; --surface: #fff; --ink: #0f2a33; --muted: #4a5f67; --grid: #e3e9eb; --line: #d5dde0; --line-strong: #b9c7cc;
   --series: #0b4d60; --brand-ink: #0b4d60;
   --good: #0ca30c; --warn: #fab219; --bad: #d03b3b;
@@ -11,6 +12,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
+    --workspace-background: url("./assets/workspace-dark-background.webp");
     --bg: #0c171c; --surface: #15262d; --ink: #e6eef0; --muted: #9fb4bb; --grid: #263a43; --line: #2c424b; --line-strong: #5d7782;
     --series: #5fb8d0; --brand-ink: #7cc8dc;
     --good: #2fb344; --warn: #fab219; --bad: #f0605d;
@@ -21,6 +23,7 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --workspace-background: url("./assets/workspace-dark-background.webp");
   --bg: #0c171c; --surface: #15262d; --ink: #e6eef0; --muted: #9fb4bb; --grid: #263a43; --line: #2c424b; --line-strong: #5d7782;
   --series: #5fb8d0; --brand-ink: #7cc8dc;
   --good: #2fb344; --warn: #fab219; --bad: #f0605d;
@@ -34,6 +37,15 @@ input[type=checkbox] { width: 20px; height: 20px; }
 
 :root { font-family: system-ui, sans-serif; color: var(--ink); background: var(--bg); }
 body { margin: 0; }
+body:has(.app:not(.authpage)) { isolation: isolate; }
+body:has(.app:not(.authpage))::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--workspace-background) center / cover no-repeat;
+}
 .app { max-width: 640px; margin: 0 auto; padding: 0 16px 16px; }
 .brand-header { display: flex; justify-content: space-between; align-items: center; gap: 12px;
   margin: 0 -16px; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: var(--brand); color: #fff; }
