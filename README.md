@@ -137,7 +137,7 @@ Workspace screens use `src/assets/workspace-light-background.webp` in light mode
 
 Settings > About shows the version from `package.json`, the short Git commit ID and the build date (UTC). Vite embeds these at build time, so offline installations show their own build details. GitHub Actions uses `GITHUB_SHA`; local builds use Git HEAD and append `-dirty` when there are uncommitted changes. Local builds require Git and a repository checkout. Update the package version when releasing a new version.
 
-Settings > About credits Mr. H Digital using the supplied badge, optimized as WebP at `public/logo/mrh-digital-badge.webp`.
+Settings > About credits Mr. H Digital using the supplied badge, optimized as WebP at `public/logo/mrh-digital-badge.webp`. The black background is removed so only the lime-green logo remains, with transparency for both themes.
 
 The logo artwork in `brand/source/` is the source of truth. To regenerate the icons and logos:
 
