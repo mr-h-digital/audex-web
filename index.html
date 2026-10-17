@@ -35,8 +35,10 @@
     <style>
       /* Splash shown until React mounts: brand teal, white lockup, tagline and a sweeping amber line. */
       #boot { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: #0b4d60; color: #fff; font-family: system-ui, sans-serif; transition: opacity .35s ease; }
-      #boot.boot--out { opacity: 0; pointer-events: none; }
+        isolation: isolate; background: #0b4d60; color: #fff; font-family: system-ui, sans-serif; transition: opacity .35s ease; }
+      #boot::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+        background: url("/src/assets/workspace-dark-background.webp") center / cover no-repeat; opacity: .12; }
+      #boot[data-state="exiting"] { opacity: 0; pointer-events: none; }
       #boot img { width: 200px; height: auto; animation: boot-fade .6s ease-out both; }
       #boot p { margin: 14px 0 0; font-size: 15px; font-weight: 500; letter-spacing: .04em; opacity: .9; animation: boot-fade .6s .15s ease-out both; }
       .boot__bar { width: 120px; height: 3px; margin-top: 18px; border-radius: 2px; overflow: hidden; background: rgba(255,255,255,.18); }
@@ -48,8 +50,8 @@
   </head>
   <body>
     <div id="root"></div>
-    <div id="boot" role="status" aria-label="Loading AudEx">
-      <picture><source srcset="/logo/audex-lockup-white.webp" type="image/webp" /><img src="/logo/audex-lockup-white.png" alt="AudEx" width="200" height="52" /></picture>
+    <div id="boot" data-state="loading" role="status" aria-label="Loading AudEx">
+      <picture><source srcset="/logo/audex-lockup-white.webp" type="image/webp" /><img src="/logo/audex-lockup-white.png" alt="AudEx" width="924" height="240" /></picture>
       <p>Audit with confidence</p>
       <div class="boot__bar"><i></i></div>
     </div>

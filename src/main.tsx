@@ -15,5 +15,5 @@ createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictM
 const boot = document.getElementById("boot");
 if (boot) {
   const wait = Math.max(0, 800 - performance.now());
-  setTimeout(() => { boot.classList.add("boot--out"); setTimeout(() => boot.remove(), 400); }, wait);
+  setTimeout(() => { boot.dataset.state = "exiting"; setTimeout(() => boot.remove(), 400); }, wait);
 }

@@ -37,8 +37,8 @@ input[type=checkbox] { width: 20px; height: 20px; }
 
 :root { font-family: system-ui, sans-serif; color: var(--ink); background: var(--bg); }
 body { margin: 0; }
-body:has(.app:not(.authpage)) { isolation: isolate; }
-body:has(.app:not(.authpage))::before {
+body:has(.app) { isolation: isolate; }
+body:has(.app)::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -435,9 +435,6 @@ html, body, #root { min-width: 320px; }
   min-height: 100vh;
   margin: 0;
   padding: 0 16px 32px;
-  background:
-    linear-gradient(rgba(8, 30, 38, .24), rgba(8, 30, 38, .42)),
-    url("./assets/signin-background.webp") center / cover fixed;
 }
 @supports (min-height: 100dvh) {
   .app.authpage { min-height: 100dvh; }
@@ -460,6 +457,5 @@ html, body, #root { min-width: 320px; }
 }
 
 @media (max-width: 600px) {
-  .app.authpage { background-attachment: scroll; }
   .authpage .authcard { margin-top: 32px; }
 }

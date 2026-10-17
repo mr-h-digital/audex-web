@@ -133,7 +133,9 @@ Until server-backed audits are available to the dashboard, it uses clearly label
 
 Desktop layouts (900 px and wider) use a distinct teal navigation panel with labelled icons, an active-page marker and keyboard-focus indicators. Page headings distinguish the workspace from navigation. Mobile keeps the existing bottom navigation.
 
-Workspace screens use `src/assets/workspace-light-background.webp` in light mode and `src/assets/workspace-dark-background.webp` in dark mode, optimized from the supplied artwork. The backgrounds follow explicit and system theme settings. The separate sign-in background is unchanged; content cards remain opaque for readability. Both workspace images are included in the offline app cache.
+Workspace and authentication screens (including sign-in, first-account setup and password recovery) use `src/assets/workspace-light-background.webp` in light mode and `src/assets/workspace-dark-background.webp` in dark mode, optimized from the supplied artwork. The backgrounds follow explicit and system theme settings; content cards remain opaque for readability. Both images are included in the offline app cache.
+
+The startup splash keeps its teal base with the dark artwork at 12% opacity behind the white logo, tagline and loading indicator. This splash stays teal in both themes and respects reduced-motion settings.
 
 Settings > About shows the version from `package.json`, the short Git commit ID and the build date (UTC). Vite embeds these at build time, so offline installations show their own build details. GitHub Actions uses `GITHUB_SHA`; local builds use Git HEAD and append `-dirty` when there are uncommitted changes. Local builds require Git and a repository checkout. Update the package version when releasing a new version.
 
