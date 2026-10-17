@@ -65,8 +65,19 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
           year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short",
         })}</time></div>
         <div className="setrow developer-credit">
-          <img src="/logo/mrh-digital-badge.webp" alt="Mr. H Digital logo" width={64} height={64} loading="lazy" />
-          <div><small>Developed by</small><strong>Mr. H Digital</strong></div>
+          <a className="developer-credit__website" href="https://mrhdigital.co.za/" target="_blank" rel="noopener noreferrer">
+            <img src="/logo/mrh-digital-badge.webp" alt="" width={64} height={64} loading="lazy" />
+            <span>
+              <small>Developed by</small>
+              <strong>Mr. H Digital</strong>
+              <span className="developer-credit__domain">mrhdigital.co.za</span>
+              <span className="small">Opens in a new tab</span>
+            </span>
+          </a>
+        </div>
+        <div className="setrow">
+          <span>Developer contact</span>
+          <a className="developer-contact" href="mailto:info@mrhdigital.co.za">info@mrhdigital.co.za</a>
         </div>
       </section>
     </div>
