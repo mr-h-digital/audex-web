@@ -210,6 +210,8 @@ fieldset.flash { animation: flash 2.2s ease; }
 .howto summary { min-height: 44px; font-weight: 600; }
 .howto ul { margin: 4px 0; padding-left: 18px; font-size: .9rem; }
 .adv { background: transparent; padding: 0; margin: 4px 0 0; }
+.field, .adv { min-width: 0; }
+.adv > select { width: 100%; min-width: 0; }
 .adv summary { font-size: .85rem; color: var(--muted); min-height: 40px; }
 .tip { margin: 6px 0 0; font-size: .8rem; color: var(--muted); }
 .offline { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--warn-bg); font-size: .85rem; }
@@ -259,6 +261,8 @@ details:not([open]) > summary::after { content: "▸"; }
 .authcard .pagetitle { margin: 0 0 4px; }
 .pwrow { display: flex; gap: 8px; }
 .pwrow input { flex: 1; min-width: 0; }
+.pwrow input[type="password"]::-ms-reveal,
+.pwrow input[type="password"]::-ms-clear { display: none; }
 .pwtoggle { min-width: 64px; min-height: 44px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); color: var(--brand-ink); font-weight: 600; }
 .linkrow { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .linkbtn { background: none; border: 0; padding: 10px 0; min-height: 44px; color: var(--brand-ink); text-decoration: underline; font-size: .9rem; }
