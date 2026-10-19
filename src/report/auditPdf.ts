@@ -100,7 +100,7 @@ export async function buildAuditReport(a: SavedAudit, logo: string | null = null
   return doc;
 }
 
-export async function downloadAuditReport(a: SavedAudit): Promise<void> {
+export async function downloadAuditReport(a: SavedAudit, loadPhoto: (id: string) => Promise<Blob | undefined> = getPhoto): Promise<void> {
   let logo: string | null = null;
   try {
     const blob = await (await fetch("/logo/audex-lockup.png")).blob();
@@ -108,10 +108,11 @@ export async function downloadAuditReport(a: SavedAudit): Promise<void> {
   } catch { /* logo is optional */ }
   const photoUrls: Record<string, string> = {};
   for (const p of a.photos ?? []) {
-    try {
-      const b = await getPhoto(p.id);
-      if (b) photoUrls[p.id] = await pdfJpegDataUrl(b);
-    } catch { /* photo missing on this device */ }
+    const missing = () => new Error("Some audit photos are not cached. Connect to download them before exporting this report.");
+    let b: Blob | undefined;
+    try { b = await loadPhoto(p.id); } catch { throw missing(); }
+    if (!b) throw missing();
+    try { photoUrls[p.id] = await pdfJpegDataUrl(b); } catch { throw missing(); }
   }
   (await buildAuditReport(a, logo, photoUrls)).save(auditFilename(a));
 }

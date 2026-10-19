@@ -100,7 +100,17 @@ The `shared/` directory is copied between this repository and `audex-api`. When 
 
 Audit drafts are saved on the device as the auditor works. Finalizing an audit requires all items to be answered and records its result under the selected rule set. Sites, training sessions, profile settings and photos are also stored locally; photos use IndexedDB.
 
-When `VITE_API_URL` is configured, finalized audits are uploaded to `PUT /api/audits/{id}` when the device is online. Client-generated IDs make retries safe. Photos upload after their audit syncs to `PUT /api/audits/{id}/photos/{photoId}`. Without the API URL, audits remain on the device.
+Records and photo blobs live in separate IndexedDB databases per account ID. Signing out hides that account's records without deleting them; switching accounts never reuses another account's records. Without an API URL, records use a separate local-only database.
+
+When `VITE_API_URL` is configured, the same account can sync across devices. Sync runs after sign-in, when connectivity returns, after local changes, and through **Sync now**. Sites and training sessions use paginated `GET /api/sites` and `GET /api/training-sessions` and revision-checked `PUT /api/{resource}/{id}`. Archiving a site or removing training sends an archive tombstone, not a destructive delete. Dirty local records are never replaced by pulls.
+
+Finalized audits upload through `PUT /api/audits/{id}`; `GET /api/audits` and `GET /api/audits/{id}` discover their answers, N/A reasons and photo metadata on other devices. Finalized audits are read-only everywhere; unfinished drafts stay only on their original device. There is no inter-account sharing.
+
+Exact upload request snapshots are persisted before sending, so retrying after a lost response reuses the original body and revision. Edits made while a request is in flight remain pending and use the acknowledged revision next. Conflicts (409), sign-in failures, missing photos, storage failures and connection errors remain visible with retry controls; a conflict is never force-overwritten. Check the other device before retrying conflicting edits.
+
+Photos upload after their audit. Discovered remote photo metadata is marked uploaded, not queued as a new attachment. Images download on demand using bearer-authenticated `GET /api/audits/{id}/photos/{photoId}`, then remain available offline in that account's cache. Open photos or export the audit report while online once to cache its images. Reports refuse to silently omit uncached photos. Sign-out/account changes stop in-flight responses from changing another account's data.
+
+Older unscoped `audex.*.v1` records and the `audex-photos` database are left untouched and are not automatically assigned to anyone. The app offers an explicit **Confirm ownership and import** action. Use it only when every older record belongs to the current account. It copies photos and records into that account, queues their upload, and records the claim only after persistence succeeds. Original legacy data is retained as a recovery copy. Do not clear browser storage before checking migration and sync.
 
 ### Accounts
 
@@ -127,7 +137,7 @@ Account recovery requires working email delivery. Photo storage requires a confi
 
 The dashboard and PDF report share `computeAnalytics()` in `src/analytics/`, keeping their calculations aligned. Date filters include presets and custom ranges; period KPIs compare against the previous period of equal length. Training effect compares audit results in the 90 days before and after a session, and needs at least two audits on each side.
 
-Until server-backed audits are available to the dashboard, it uses clearly labelled demo data from `src/analytics/demo.ts`. Reports are generated in the browser with jsPDF and work offline.
+The dashboard uses the current account's local finalized audit summaries, sites and active training records, including downloaded records. An empty account stays empty; made-up data from `src/analytics/demo.ts` appears only through the explicit demo preview. Reports are generated in the browser with jsPDF and work offline once their photo images have been cached.
 
 ## Brand assets
 
@@ -165,9 +175,9 @@ The repository's `public/CNAME` file preserves the custom domain in the publishe
 
 ## Current limitations
 
-- Sites and training sessions do not sync to the server.
-- Server data is not pulled onto a second device; local audits remain on the device where they were created.
-- The dashboard currently uses labelled demo data until connected to real server-backed audit data.
+- Draft audits are deliberately device-local; only finalized audits sync.
+- Concurrent changes to the same site/training revision require reviewing the visible conflict; there is no force-overwrite action.
+- Device storage is browser-managed, not a backup. Keep successful server syncs and report copies; clearing browser data removes unsent records and cached photos.
 - Validate the Spring controllers, SQL and photo-storage integration against a real database and bucket before relying on them in production.
 
 The web workflow runs `npm test` and `npm run build`. The server-side integration still needs its own end-to-end validation in the target hosting environment.

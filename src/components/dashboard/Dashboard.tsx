@@ -42,8 +42,8 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
     <div className="dash dashboard-page">
       <PageHeading title="Dashboard" description="Review compliance, trends and sites that need attention." />
       {data.demo
-        ? <p className="banner">Demo data: made-up sites and audits, not real results.{real.audits.length === 0 ? " Finalise an audit and your real results appear here." : " "}
-          {real.audits.length > 0 && <button type="button" className="linkbtn" onClick={() => setForceDemo(false)}>Show my audits</button>}</p>
+        ? <p className="banner">Demo data: made-up sites and audits, not real results.{" "}
+          <button type="button" className="linkbtn" onClick={() => setForceDemo(false)}>Show my audits</button></p>
         : <p className="small"><button type="button" className="linkbtn" onClick={() => setForceDemo(true)}>Preview with demo data</button></p>}
       <FilterBar preset={preset} onPreset={(p) => { setPreset(p); if (p === "custom" && !custom.from) setCustom({ from: period.from, to: period.to }); }}
         from={custom.from || period.from} to={custom.to} onFrom={(from) => setCustom((c) => ({ ...c, from }))} onTo={(to) => setCustom((c) => ({ ...c, to }))}

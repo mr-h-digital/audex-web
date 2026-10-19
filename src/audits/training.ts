@@ -1,20 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useAccountStore } from "../sync/accountStore";
 import type { TrainingSession } from "../analytics/types";
 
 export interface TrainingDraft { siteId: string; date: string; topic: string }
 
 export const addTraining = (l: TrainingSession[], d: TrainingDraft, id: string): TrainingSession[] =>
-  d.siteId && d.date && d.topic.trim() ? [...l, { id, siteId: d.siteId, date: d.date, topic: d.topic.trim() }] : l;
-
-const KEY = "audex.training.v1";
-function read(): TrainingSession[] {
-  try { const v = JSON.parse(localStorage.getItem(KEY) ?? "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
-}
+  d.siteId && d.date && d.topic.trim() ? [...l, { id, siteId: d.siteId, date: d.date, topic: d.topic.trim(), revision: 0, archived: false, dirty: true }] : l;
 
 export function useTraining() {
-  const [sessions, setSessions] = useState<TrainingSession[]>(read);
-  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(sessions)); } catch { /* storage unavailable */ } }, [sessions]);
-  const add = useCallback((d: TrainingDraft) => setSessions((l) => addTraining(l, d, crypto.randomUUID())), []);
-  const remove = useCallback((id: string) => setSessions((l) => l.filter((s) => s.id !== id)), []);
+  const { store, data } = useAccountStore();
+  const sessions = data.training.filter((s) => !s.archived);
+  const add = (d: TrainingDraft) => store.change((l) => ({ ...l, training: addTraining(l.training, d, crypto.randomUUID()) }));
+  const remove = (id: string) => store.change((l) => ({ ...l, training: l.training.map((s) => s.id === id ? { ...s, archived: true, dirty: true } : s) }));
   return { sessions, add, remove };
 }

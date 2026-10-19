@@ -42,6 +42,18 @@ export function useAuth(base: string = API_URL): Auth {
     setPhase({ name: "signedOut", notice });
   }, []);
 
+  useEffect(() => {
+    if (!enabled) return;
+    const changed = (event: StorageEvent) => {
+      if (event.key !== "audex.session.v1" && event.key !== null) return;
+      const session = loadSession();
+      token.current = session?.token ?? null;
+      setPhase(session ? { name: "in", user: session.user } : { name: "signedOut", notice: SESSION_ENDED });
+    };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, [enabled]);
+
   // No saved sign-in: find out whether this is a brand-new server (setup) or an ordinary one (sign in).
   useEffect(() => {
     if (phase.name !== "loading") return;
@@ -56,10 +68,12 @@ export function useAuth(base: string = API_URL): Auth {
   useEffect(() => {
     if (phase.name !== "in" || checked.current) return;
     checked.current = true;
+    const checkingToken = token.current;
     api.me().then((u) => {
+      if (token.current !== checkingToken) return;
       const s = loadSession(); if (s) saveSession({ ...s, user: u });
       setPhase({ name: "in", user: u });
-    }).catch((e) => { if (e instanceof ApiError && e.status === 401) expire(SESSION_ENDED); });
+    }).catch((e) => { if (token.current === checkingToken && e instanceof ApiError && e.status === 401) expire(SESSION_ENDED); });
   }, [phase.name, api, expire]);
 
   const signIn = useCallback((s: Session) => {
@@ -67,21 +81,26 @@ export function useAuth(base: string = API_URL): Auth {
     setPhase({ name: "in", user: s.user });
   }, []);
   const signOut = useCallback(async () => {
-    try { await api.logout(); } catch { /* offline: the phone forgets the sign-in either way */ }
+    const logout = api.logout().catch(() => undefined);
     expire(); checked.current = false;
+    // Local access and in-flight sync stop immediately, even when logout cannot reach the server.
+    await logout;
   }, [api, expire]);
   const signOutEverywhere = useCallback(async () => {
+    const signingOutToken = token.current;
     await api.logoutAll(); // errors surface to the caller so the person knows it did not happen
-    expire(); checked.current = false;
+    if (token.current === signingOutToken) { expire(); checked.current = false; }
   }, [api, expire]);
   const setUser = useCallback((u: Me) => {
-    const s = loadSession(); if (s) saveSession({ ...s, user: u });
-    setPhase((p) => (p.name === "in" ? { name: "in", user: u } : p));
+    const s = loadSession(); if (!s || s.user.id !== u.id) return;
+    saveSession({ ...s, user: u });
+    setPhase((p) => (p.name === "in" && p.user.id === u.id ? { name: "in", user: u } : p));
   }, []);
   const authFetch = useCallback(async (url: string, init: RequestInit = {}) => {
+    const requestToken = token.current;
     const headers = { ...(init.headers as Record<string, string> | undefined), ...(token.current ? { Authorization: `Bearer ${token.current}` } : {}) };
     const res = await fetch(url, { ...init, headers });
-    if (res.status === 401) { expire(SESSION_ENDED); checked.current = false; }
+    if (res.status === 401 && token.current === requestToken) { expire(SESSION_ENDED); checked.current = false; }
     return res;
   }, [expire]);
   const goToSignIn = useCallback((notice?: string) => { token.current = null; clearSession(); checked.current = false; setPhase({ name: "signedOut", notice }); }, []);

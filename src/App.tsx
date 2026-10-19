@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOnline } from "./hooks/useOnline";
 import { Settings } from "./components/Settings";
 import { roleLine, useProfile } from "./profile/store";
@@ -11,14 +11,19 @@ import { Dashboard } from "./components/dashboard/Dashboard";
 import { StatusTag } from "./components/dashboard/status";
 import { PhotoStrip } from "./components/PhotoStrip";
 import { compressImage } from "./photos/compress";
-import { deletePhoto, getPhoto, putPhoto } from "./photos/blobStore";
-import { addPhoto, markUploaded, photosFor, photosWaiting, pruneOrphans, removePhoto } from "./photos/photos";
+import { deleteAccountPhoto, getAccountPhoto, putAccountPhoto } from "./photos/blobStore";
+import { addPhoto, photosFor, photosWaiting, pruneOrphans, removePhoto } from "./photos/photos";
+import { PhotoAccess, usePhotoLoader } from "./photos/PhotoAccess";
 import { ScorePanel } from "./components/ScorePanel";
 import { Sites } from "./components/Sites";
 import { activeRuleSetCode, ruleSet, ruleSets, sections } from "./scoring/catalog";
 import type { Result } from "./scoring/types";
 import { useSites } from "./sites/store";
-import { API_URL, pending, syncPending, syncPhotos } from "./sync/sync";
+import { API_URL, pending } from "./sync/sync";
+import { AccountProvider, useAccountStore } from "./sync/accountStore";
+import { loadRemotePhoto, syncAccount } from "./sync/twoWay";
+import { loadSession } from "./auth/session";
+import { hasLegacyRecords, importLegacy } from "./sync/legacy";
 import { AuthGate } from "./components/auth/AuthGate";
 import type { Auth } from "./auth/useAuth";
 import { Navigation, type Page } from "./components/Navigation";
@@ -37,15 +42,19 @@ const saveLabel = (a: SavedAudit) => a.state === "draft" ? "Draft saved" : a.syn
 const installed = () => window.matchMedia?.("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true;
 
 export default function App() {
-  return <AuthGate>{(auth) => <Main auth={auth} />}</AuthGate>;
+  return <AuthGate>{(auth) => {
+    const account = auth.user?.id ?? "local-only";
+    return <AccountProvider key={account} account={account}><Main key={account} auth={auth} /></AccountProvider>;
+  }}</AuthGate>;
 }
 
 function Main({ auth }: { auth: Auth }) {
+  const { store, data } = useAccountStore();
   const [tab, setTab] = useState<Page>("audit");
   const [profile, saveProfile] = useProfile();
   const [theme, setTheme] = useTheme();
   const { sites, add, update, archive } = useSites();
-  const { audits, save, remove, markSynced, setAudits } = useAudits();
+  const { audits, save, remove } = useAudits();
   const training = useTraining();
   const [openId, setOpenId] = useState<string | null>(null);
   const [siteId, setSiteId] = useState("");
@@ -70,19 +79,32 @@ function Main({ auth }: { auth: Auth }) {
   };
 
   const photosQueued = photosWaiting(audits);
-  // Send finalised audits, then their photos, whenever something is queued and the phone is online.
+  const [syncError, setSyncError] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState("");
+  const alive = useRef(true);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const runSync = useCallback(async () => {
+    if (!API_URL || !auth.user) return;
+    const session = loadSession();
+    const current = () => alive.current && loadSession()?.token === session?.token && loadSession()?.user.id === store.account;
+    setSyncing(true); setSyncError("");
+    try {
+      await syncAccount(store, API_URL, auth.authFetch, current);
+      if (current()) setLastSync(new Date().toLocaleTimeString());
+    } catch (e) { if (current()) setSyncError(e instanceof Error ? e.message : "Sync failed. Retry when connected."); }
+    finally { if (alive.current) setSyncing(false); }
+  }, [store, auth.user?.id, auth.authFetch]);
+  const pendingKey = JSON.stringify([data.sites.filter((s) => s.dirty), data.training.filter((s) => s.dirty), queued, photosQueued]);
   useEffect(() => {
-    if (!API_URL || queued + photosQueued === 0) return;
-    const run = async () => {
-      const ids = await syncPending(audits, API_URL, (u, i) => auth.authFetch(u, i));
-      if (ids.length) { markSynced(ids); return; } // photos follow on the next pass, once the audits are marked synced
-      const up = await syncPhotos(audits, API_URL, (id) => getPhoto(id), (u, i) => auth.authFetch(u, i));
-      if (up.length) setAudits((l) => markUploaded(l, up));
-    };
-    if (navigator.onLine) void run();
-    window.addEventListener("online", run);
-    return () => window.removeEventListener("online", run);
-  }, [audits, queued, photosQueued, markSynced, setAudits, auth]);
+    if (online) void runSync();
+  }, [online, runSync, pendingKey]);
+  const loadPhoto = useCallback(async (auditId: string, photoId: string) => {
+    if (!auth.user || !API_URL) return getAccountPhoto(store.account, photoId);
+    const session = loadSession();
+    return loadRemotePhoto(store.account, auditId, photoId, API_URL, auth.authFetch,
+      () => alive.current && loadSession()?.token === session?.token && loadSession()?.user.id === store.account);
+  }, [store, auth.user?.id, auth.authFetch]);
 
   const real = useMemo(() => ({
     sites: sites.map((s) => ({ id: s.id, name: s.name })),
@@ -98,7 +120,7 @@ function Main({ auth }: { auth: Auth }) {
   };
 
   return (
-    <main className="app">
+    <PhotoAccess.Provider value={loadPhoto}><main className="app">
       <BrandHeader>
         {current && tab === "audit" && <span className="syncbadge">{saveLabel(current)}</span>}
         <button type="button" className="gear" aria-label="Settings" aria-current={tab === "settings" ? "page" : undefined} onClick={() => setTab("settings")}>
@@ -109,6 +131,15 @@ function Main({ auth }: { auth: Auth }) {
         </button>
       </BrandHeader>
       {!online && <p className="offline" role="status">You are offline. That is fine: keep working and everything is saved on this phone.</p>}
+      {API_URL && <p className="small" role="status">{syncing ? "Syncing your account…" : lastSync ? `Last synced ${lastSync}` : "Records are saved offline for this account."}{" "}
+        <button type="button" className="chip" disabled={syncing || !online} onClick={() => void runSync()}>Sync now</button></p>}
+      {(syncError || store.error) && <p className="warn" role="alert">{store.error || syncError} <button type="button" className="chip" onClick={() => void runSync()}>Retry</button></p>}
+      {hasLegacyRecords() && <p className="banner">Older device records are unassigned and have not been synced to this account.{" "}
+        <button type="button" className="chip" onClick={async () => {
+          if (!window.confirm("Only import if ALL older records on this device belong to your signed-in account. They will be uploaded to this account and cannot be shared with another account. Confirm ownership and import?")) return;
+          try { await importLegacy(store); }
+          catch (e) { setSyncError(e instanceof Error ? e.message : "Import failed. Original records have been kept."); }
+        }}>Confirm ownership and import</button></p>}
 
       <Navigation page={tab} onNavigate={setTab} />
 
@@ -135,10 +166,10 @@ function Main({ auth }: { auth: Auth }) {
                   <p className="small">Leave this on the current WPC rules unless you have been told to change it.</p></details></>}
               {!installed() && <p className="tip">Tip: add AudEx to your home screen (in your browser menu, choose Add to Home Screen). That keeps your audits safe on this phone and opens the app faster.</p>}
             </section>
-            <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deletePhoto(ph.id).catch(() => undefined)); remove(id); }} />
+            <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deleteAccountPhoto(store.account, ph.id).catch(() => undefined)); remove(id); }} />
           </div>)}
       </section>
-    </main>
+    </main></PhotoAccess.Provider>
   );
 }
 
@@ -162,6 +193,8 @@ function AuditList({ audits, onOpen, onDelete }: { audits: SavedAudit[]; onOpen:
 }
 
 function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange: (a: SavedAudit) => void; onClose: () => void }) {
+  const { store } = useAccountStore();
+  const loadPhoto = usePhotoLoader();
   const rules = ruleSet(audit.ruleSetCode);
   const score = useMemo(() => scoreOf(audit), [audit]);
   const locked = audit.state === "final";
@@ -178,14 +211,14 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
     try {
       setPhotoError("");
       const id = crypto.randomUUID();
-      await putPhoto(id, await compressImage(file));
+      await putAccountPhoto(store.account, id, await compressImage(file));
       onChange(addPhoto(latest.current, { id, itemKey, caption: "", takenAt: new Date().toISOString() }));
     } catch { setPhotoError("That photo could not be saved. Please try again."); }
   };
-  const detach = (id: string) => { onChange(removePhoto(latest.current, id)); void deletePhoto(id).catch(() => undefined); };
+  const detach = (id: string) => { onChange(removePhoto(latest.current, id)); void deleteAccountPhoto(store.account, id).catch(() => undefined); };
   const doFinalise = () => {
     const { audit: pruned, removed } = pruneOrphans(audit);
-    removed.forEach((id) => void deletePhoto(id).catch(() => undefined));
+    removed.forEach((id) => void deleteAccountPhoto(store.account, id).catch(() => undefined));
     onChange(finalise(pruned, new Date().toISOString()));
     setConfirming(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -213,9 +246,12 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
       <section className="card form">
         <label className="field">Unit manager<input value={audit.unitManager} disabled={locked} onChange={(e) => set({ unitManager: e.target.value })} /></label>
         <label className="field">Housekeeping supervisor<input value={audit.supervisor} disabled={locked} onChange={(e) => set({ supervisor: e.target.value })} /></label>
-        <PhotoStrip photos={photosFor(audit, null)} locked={locked} label="Add a photo of the site" onAdd={(f) => attach(f, null)} onRemove={detach} />
+        <PhotoStrip auditId={audit.id} photos={photosFor(audit, null)} locked={locked} label="Add a photo of the site" onAdd={(f) => attach(f, null)} onRemove={detach} />
         {photoError && <p className="warn" role="alert">{photoError}</p>}
-        {locked && <button type="button" className="btn" onClick={async () => (await import("./report/auditPdf")).downloadAuditReport(audit)}>Download audit report (PDF)</button>}
+        {locked && <button type="button" className="btn" onClick={async () => {
+          try { await (await import("./report/auditPdf")).downloadAuditReport(audit, (id) => loadPhoto(audit.id, id)); }
+          catch (e) { setPhotoError(e instanceof Error ? e.message : "Report could not be downloaded."); }
+        }}>Download audit report (PDF)</button>}
       </section>
       {!locked && (
         <details className="card howto">
@@ -238,18 +274,18 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
               <span className={`sec__count${full ? " sec__count--done" : ""}`}>{full ? "✓ " : ""}{done}/{s.items.length}</span>
             </summary>
             {s.items.map((i) => (
-              <fieldset key={i.key} id={`item-${i.key}`} disabled={locked} className={flash === i.key ? "flash" : undefined}>
+              <fieldset key={i.key} id={`item-${i.key}`} className={flash === i.key ? "flash" : undefined}>
                 <legend>{i.text} <span className={`sev sev--${i.severity.toLowerCase()}`}>{SEV[i.severity]}</span></legend>
                 <div className="opts">
                   {RESULTS.map((r) => (
                     <label key={r.value} className={`opt opt--${r.cls}`}>
-                      <input type="radio" name={i.key} checked={audit.answers[i.key] === r.value}
+                      <input type="radio" name={i.key} disabled={locked} checked={audit.answers[i.key] === r.value}
                         onChange={() => set({ answers: { ...audit.answers, [i.key]: r.value } })} />
                       <span aria-hidden>{r.icon}</span> {r.label}
                     </label>))}
                 </div>
                 {(audit.answers[i.key] === "NON_COMPLIANT" || audit.answers[i.key] === "PARTIALLY_COMPLIANT" || photosFor(audit, i.key).length > 0) && (
-                  <PhotoStrip photos={photosFor(audit, i.key)} locked={locked} label="Add photo" onAdd={(f) => attach(f, i.key)} onRemove={detach} />)}
+                  <PhotoStrip auditId={audit.id} photos={photosFor(audit, i.key)} locked={locked} label="Add photo" onAdd={(f) => attach(f, i.key)} onRemove={detach} />)}
                 {audit.answers[i.key] === "NA" && (
                   <label className="field narow">Why is this not applicable? (required)
                     <input value={audit.naReasons?.[i.key] ?? ""} disabled={locked}

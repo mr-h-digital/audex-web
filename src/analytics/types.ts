@@ -19,7 +19,7 @@ export interface AuditSummary {
   failedItems: FailedItem[];
 }
 
-export interface TrainingSession { id: string; siteId: string; date: string; topic: string }
+export interface TrainingSession { id: string; siteId: string; date: string; topic: string; attendees?: number; notes?: string; revision?: number; archived?: boolean; updatedAt?: string; dirty?: boolean }
 
 export type PresetId = "last30" | "last90" | "quarter" | "ytd" | "last12m" | "custom";
 

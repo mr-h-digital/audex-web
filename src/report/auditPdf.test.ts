@@ -1,7 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { finalise, newAudit } from "../audits/store";
 import { sections } from "../scoring/catalog";
-import { auditFilename, buildAuditReport } from "./auditPdf";
+import { auditFilename, buildAuditReport, downloadAuditReport } from "./auditPdf";
 
 describe("audit PDF", () => {
   const answers = Object.fromEntries(sections.flatMap((s) => s.items.map((i, n) => [i.key, n % 9 === 0 ? "PARTIALLY_COMPLIANT" : "COMPLIANT"])));
@@ -14,6 +14,13 @@ describe("audit PDF", () => {
     expect(out).toContain("Chernay Hildebrandt");
   });
   it("names the file by site and date", () => expect(auditFilename(a)).toBe("AudEx-audit_Tygerberg-Clinic_2026-10-15.pdf"));
+  it("refuses to silently omit a photo that is unavailable offline", async () => {
+    vi.stubGlobal("fetch", async () => { throw new Error("offline"); });
+    try {
+      await expect(downloadAuditReport({ ...a, photos: [{ id: "uncached", caption: "", itemKey: null, takenAt: "t", uploaded: true }] },
+        async () => undefined)).rejects.toThrow(/not cached/);
+    } finally { vi.unstubAllGlobals(); }
+  });
 });
 
 describe("audit PDF with photos", () => {

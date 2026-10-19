@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { REPORT_AUTHOR } from "../config";
+import { useAccountStore } from "../sync/accountStore";
 
 export const EMPLOYER = "Western Province Caterers (Health Care Division)";
 
-/** Who is doing the audits. Used as the author on every report. Stored on the phone until sign-in exists. */
+/** Who is doing the audits. Report preferences are stored separately for each local account. */
 export interface Profile { name: string; jobTitle: string; email: string; phone: string }
 
 export const DEFAULT_PROFILE: Profile = { name: REPORT_AUTHOR, jobTitle: "Housekeeping Trainer", email: "", phone: "" };
@@ -19,14 +20,15 @@ export function validateProfile(p: Profile): string | null {
 
 const clean = (p: Profile): Profile => ({ name: p.name.trim(), jobTitle: p.jobTitle.trim(), email: p.email.trim(), phone: p.phone.trim() });
 
-const KEY = "audex.profile.v1";
-function read(): Profile {
-  try { return { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch { return DEFAULT_PROFILE; }
+function read(key: string): Profile {
+  try { return { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem(key) ?? "{}") }; } catch { return DEFAULT_PROFILE; }
 }
 
 export function useProfile(): [Profile, (p: Profile) => void] {
-  const [profile, setProfile] = useState<Profile>(read);
-  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(profile)); } catch { /* storage unavailable */ } }, [profile]);
+  const { store } = useAccountStore();
+  const key = `audex.profile.account.${encodeURIComponent(store.account)}`;
+  const [profile, setProfile] = useState<Profile>(() => read(key));
+  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(profile)); } catch { /* storage unavailable */ } }, [profile, key]);
   const save = useCallback((p: Profile) => setProfile(clean(p)), []);
   return [profile, save];
 }
