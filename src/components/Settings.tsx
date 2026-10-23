@@ -12,7 +12,7 @@ const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: "system", label: "Match my phone", icon: "◐" },
 ];
 
-interface Props { profile: Profile; onSaveProfile: (p: Profile) => void; theme: Theme; onTheme: (t: Theme) => void; auth: Auth; unsynced: number }
+interface Props { profile: Profile; onSaveProfile: (p: Profile) => boolean; theme: Theme; onTheme: (t: Theme) => void; auth: Auth; unsynced: number }
 
 export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynced }: Props) {
   const [draft, setDraft] = useState<Profile>(profile);
@@ -42,7 +42,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
         </div>
       </section>
 
-      <form className="card form" onSubmit={(e) => { e.preventDefault(); if (!error) { onSaveProfile(draft); setSaved(true); } }}>
+      <form className="card form" onSubmit={(e) => { e.preventDefault(); if (!error) setSaved(onSaveProfile(draft)); }}>
         <h2>Your profile</h2>
         <p className="small">Your name and job title are printed on every report you download.</p>
         {field("name", "Full name")}
@@ -52,7 +52,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
         <p className="small">Reports will say: Prepared by {draft.name.trim() || "…"}, {roleLine(draft)}</p>
         {dirty && error && <p className="warn" role="alert">{error}</p>}
         {saved && !dirty && <p className="saved" role="status">Profile saved.</p>}
-        <button className="btn" type="submit" disabled={!dirty || !!error}>Save profile</button>
+        <button className="btn" type="submit" disabled={!!error}>Save profile</button>
       </form>
 
       <AccountSection auth={auth} unsynced={unsynced} />

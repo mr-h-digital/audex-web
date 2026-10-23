@@ -30,6 +30,9 @@ import { Navigation, type Page } from "./components/Navigation";
 import { PageHeading } from "./components/PageHeading";
 import { BILLING_REQUIRED, BillingProvider, useBilling } from "./billing/BillingProvider";
 import { putAccountPhotoWithinQuota } from "./photos/blobStore";
+import { StartupReady } from "./components/StartupReady";
+import { WorkspaceEntry } from "./components/onboarding/VerificationWelcome";
+import { WorkspaceSetup, useSetupProgress } from "./components/onboarding/WorkspaceSetup";
 
 const RESULTS: { value: Result; label: string; icon: string; cls: string }[] = [
   { value: "COMPLIANT", label: "Compliant", icon: "✓", cls: "c" },
@@ -46,16 +49,18 @@ const installed = () => window.matchMedia?.("(display-mode: standalone)").matche
 export default function App() {
   return <AuthGate>{(auth) => {
     const account = auth.user?.id ?? "local-only";
-    if (BILLING_REQUIRED && !auth.enabled) return <p role="alert">The production API URL is missing. AudEx cannot open until this is configured.</p>;
-    return <AccountProvider key={account} account={account}><BillingProvider key={account} auth={auth}><Main key={account} auth={auth} /></BillingProvider></AccountProvider>;
+    if (BILLING_REQUIRED && !auth.enabled) return <main className="app startup-state"><StartupReady /><h1>Workspace unavailable</h1><p role="alert">The production API URL is missing. AudEx cannot open until this is configured.</p></main>;
+    return <AccountProvider key={account} account={account}><BillingProvider key={account} auth={auth}><WorkspaceEntry auth={auth}><Main key={account} auth={auth} /></WorkspaceEntry></BillingProvider></AccountProvider>;
   }}</AuthGate>;
 }
 
 function Main({ auth }: { auth: Auth }) {
   const { store, data } = useAccountStore();
   const billing = useBilling();
+  const setup = useSetupProgress(store.account, data.audits.length > 0);
   const [tab, setTab] = useState<Page>(() => new URLSearchParams(window.location.search).get("billing") === "return" ? "settings" : "audit");
-  const [profile, saveProfile] = useProfile();
+  const [profile, saveProfile, profileError] = useProfile();
+  const [profileSyncError, setProfileSyncError] = useState("");
   const [theme, setTheme] = useTheme();
   const { sites, add, update, archive } = useSites();
   const { audits, save, remove } = useAudits();
@@ -68,6 +73,8 @@ function Main({ auth }: { auth: Auth }) {
   const current = audits.find((a) => a.id === openId) ?? null;
   const queued = pending(audits).length;
   const online = useOnline();
+  const draft = [...audits].reverse().find((a) => a.state === "draft");
+  const finalAudits = audits.filter((a) => a.state === "final");
 
   // The server stamps each audit with the signed-in person's name, so keep the name on reports in step with it once per sign-in.
   const userId = auth.user?.id;
@@ -77,9 +84,14 @@ function Main({ auth }: { auth: Auth }) {
   }, [userId]);
   // Changing name or phone in Settings also updates the account when online; the phone copy is always saved.
   const onSaveProfile = (p: typeof profile) => {
-    saveProfile(p);
+    if (!saveProfile(p)) return false;
+    setup.update({ profileConfirmed: true });
     const u = auth.user;
-    if (u) void auth.api.updateMe({ displayName: p.name.trim(), email: u.email, phone: p.phone.trim() }).then(auth.setUser).catch(() => { /* offline: saved on the phone */ });
+    setProfileSyncError("");
+    if (u) void auth.api.updateMe({ displayName: p.name.trim(), email: u.email, phone: p.phone.trim() }).then(auth.setUser).catch(() => {
+      if (alive.current) setProfileSyncError("Report details are saved on this device, but your account name and phone could not be updated on the server. Reconnect and save your profile again.");
+    });
+    return true;
   };
 
   const photosQueued = photosWaiting(audits);
@@ -126,6 +138,7 @@ function Main({ auth }: { auth: Auth }) {
 
   return (
     <PhotoAccess.Provider value={loadPhoto}><main className="app">
+      <StartupReady />
       <BrandHeader>
         {current && tab === "audit" && <span className="syncbadge">{saveLabel(current)}</span>}
         <button type="button" className="gear" aria-label="Settings" aria-current={tab === "settings" ? "page" : undefined} onClick={() => setTab("settings")}>
@@ -152,6 +165,18 @@ function Main({ auth }: { auth: Auth }) {
       <Navigation page={tab} onNavigate={setTab} />
 
       <section className="app-content">
+        {setup.error && <p className="warn" role="alert">{setup.error}</p>}
+        {(profileError || profileSyncError) && <p className="warn" role="alert">{profileError || profileSyncError}</p>}
+        {tab === "audit" && !current && finalAudits.length === 0 && <WorkspaceSetup name={auth.user?.displayName.split(" ")[0] ?? ""} progress={setup.progress}
+          hasSites={sites.length > 0} hasAudit={audits.length > 0} writable={billing.writable} onUpdate={setup.update} onNavigate={setTab} />}
+        {tab === "audit" && !current && draft && <section className="card continue-audit"><span className="onboarding-eyebrow">RIGHT WHERE YOU LEFT OFF</span>
+          <h2>{draft.siteName}</h2><p>Your unfinished audit from {fmtDate(draft.date)} is saved on this device.</p>
+          <button className="btn" onClick={() => setOpenId(draft.id)}>{billing.writable ? "Continue your audit" : "View your saved draft"}</button></section>}
+        {tab === "audit" && (!current || current.state === "final") && finalAudits.length === 1 && !setup.progress.celebrated && <section className="card first-report" aria-labelledby="first-report-title">
+          <span className="onboarding-eyebrow">YOUR FIRST CLEARER PICTURE</span><h2 id="first-report-title">One audit. A useful next step.</h2>
+          <p>Your first finalised audit is ready to review and export. Open it to download a PDF; connect first if its photos are not cached on this device.</p>
+          <div className="onboarding-footer"><button className="btn" onClick={() => setOpenId(finalAudits[0].id)}>View audit and report</button><button className="chip" onClick={() => setup.update({ celebrated: true })}>Got it</button></div>
+        </section>}
         {tab === "audit" && <PageHeading title="Audit" description="Start a housekeeping audit or continue a saved audit." />}
         {tab === "dashboard" && <Dashboard real={real} author={{ name: profile.name, role: roleLine(profile) }} />}
         {tab === "settings" && <Settings profile={profile} onSaveProfile={onSaveProfile} theme={theme} onTheme={setTheme} auth={auth} unsynced={queued} />}
@@ -172,7 +197,7 @@ function Main({ auth }: { auth: Auth }) {
                   <select aria-label="Scoring rules" value={ruleCode} onChange={(e) => setRuleCode(e.target.value)}>
                     {ruleSets.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}</select>
                   <p className="small">Leave this on the current WPC rules unless you have been told to change it.</p></details></>}
-              {!installed() && <p className="tip">Tip: add AudEx to your home screen (in your browser menu, choose Add to Home Screen). That keeps your audits safe on this phone and opens the app faster.</p>}
+              {!installed() && finalAudits.length > 0 && <p className="tip">Make room for your next audit: add AudEx to your home screen from your browser menu. Load it online before offline use. Installation is not a backup; keep important exports and synced copies.</p>}
             </section>
             <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!billing.permit() || !window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deleteAccountPhoto(store.account, ph.id).catch(() => undefined)); remove(id); }} />
           </div>)}

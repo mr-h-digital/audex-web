@@ -132,6 +132,16 @@ Older unscoped `audex.*.v1` records and the `audex-photos` database are left unt
 
 With the API configured, the app provides first-account setup, sign-in, password and email changes, sign-out, username recovery and password reset. Sessions support offline app use; signing out does not delete locally saved audits.
 
+### Welcome and workspace setup
+
+The branded launch overlay exits when a usable authentication screen, workspace or storage-error screen has rendered, rather than holding returning users behind a mandatory timer. A stalled JavaScript/storage launch exposes reload guidance after ten seconds; no recovery action clears saved records. Authentication screens share a responsive editorial layout, with reduced-motion and light/dark support.
+
+Signed-out users see a welcome screen; account creation appears only when the API enables registration. Password-reset and email-verification links retain priority. Signed-in accounts with a verified signed entitlement indicating an unverified email see a dedicated inbox stage with resend, access refresh, password-confirmed email correction, sign-out and read-only exploration. Unknown access/network failures do not masquerade as unverified accounts; local-only and legacy deployments remain supported.
+
+New workspaces offer a skippable checklist: confirm report details in Settings, add the first site through the normal Sites form, then start an audit. Setup preferences use `audex.setup.v1.{encodedAccountId}` on this device only, independently of entitlement and audit storage. Skipping preserves progress and exposes **Resume setup** on the Audit landing page. Existing downloaded audits default to compact setup rather than an expanded welcome. Progress is derived from actual records plus explicit profile confirmation; setup storage failures are visible and never erase audits or change access.
+
+Returning users can continue their latest-created unfinished draft without a forced tour. A first-report card follows a new workspace's first finalised audit, and home-screen installation guidance appears only after a finalised audit exists. Installation is not a backup; sync and exports remain separate. Profile confirmation requires successful device persistence; account-update errors remain visible and can be retried by saving the profile again.
+
 Password and recovery protections are enforced by the server. The documented design uses BCrypt password hashes, single-use reset tokens stored as hashes, generic recovery responses and rate limits. **Do not expose server credentials in this frontend repository.**
 
 ### Server configuration

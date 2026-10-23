@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { ApiError } from "../../auth/client";
 import { newPasswordProblem, passwordChecks } from "../../auth/password";
 import { resetTokenFromUrl } from "../../auth/session";
@@ -6,13 +6,14 @@ import { useAuth, type Auth } from "../../auth/useAuth";
 import { useOnline } from "../../hooks/useOnline";
 import { DEFAULT_PROFILE } from "../../profile/store";
 import { BrandHeader } from "../BrandHeader";
+import { StartupReady } from "../StartupReady";
 
-type View = "signin" | "register" | "forgot-username" | "forgot-password";
+type View = "welcome" | "signin" | "register" | "forgot-username" | "forgot-password";
 
 /** Shows the app only to a signed-in person. When no server is configured the app opens as before. */
 export function AuthGate({ children }: { children: (auth: Auth) => ReactNode }) {
   const auth = useAuth();
-  const [view, setView] = useState<View>("signin");
+  const [view, setView] = useState<View>("welcome");
   const [notice, setNotice] = useState<string | undefined>();
   const [resetToken, setResetToken] = useState<string | null>(() => (auth.enabled ? resetTokenFromUrl() : null));
   const [verificationToken, setVerificationToken] = useState<string | null>(() => {
@@ -43,19 +44,32 @@ export function AuthGate({ children }: { children: (auth: Auth) => ReactNode }) 
     );
   }
   if (auth.phase.name === "in") return <>{children(auth)}</>;
-  if (auth.phase.name === "loading") return <Shell title="One moment…"><p className="small" role="status">Getting ready…</p></Shell>;
+  if (auth.phase.name === "loading") return <Shell title="Preparing your welcome"><p className="small" role="status">Checking account availability. Your workspace will be ready shortly.</p>
+    <p className="small">Taking longer than expected? Check your connection. You can retry without clearing any saved device records.</p>
+    <button className="btn btn--ghost" onClick={() => window.location.reload()}>Retry connection</button>
+    <button className="linkbtn" onClick={() => auth.goToSignIn()}>Go to sign in</button></Shell>;
   if (auth.phase.name === "setup") return <Shell title="Welcome to AudEx"><Setup auth={auth} /></Shell>;
 
   if (auth.phase.name !== "signedOut") return null;
   const shownNotice = notice ?? auth.phase.notice;
   const offline = auth.phase.offline;
   return (
-    <Shell title={view === "signin" ? "Sign in" : view === "register" ? "Start your 14-day trial" : view === "forgot-username" ? "Find my username" : "Reset my password"}>
+    <Shell title={view === "welcome" ? "A higher standard. One audit at a time." : view === "signin" ? "Welcome back" : view === "register" ? "Start your 14-day trial" : view === "forgot-username" ? "Find my username" : "Reset my password"}>
+      {view === "welcome" && <div className="form welcome-actions">
+        <p className="auth-intro">Your checklist, evidence and reporting. Together in one considered workspace, wherever your next audit takes you.</p>
+        {shownNotice && <p role="status" className="banner">{shownNotice}</p>}
+        {offline && <p className="warn" role="alert">We could not check account availability. Connect to sign in or create an account, then <button className="linkbtn" onClick={() => window.location.reload()}>retry the connection</button>.</p>}
+        {registration && <><button className="btn btn--wide" onClick={() => setView("register")}>Create your account</button><p className="small">14 days. One site. No card required. Starts after email verification.</p></>}
+        <button className={`btn btn--wide${registration ? " btn--ghost" : ""}`} onClick={() => setView("signin")}>Sign in to your workspace</button>
+        {!registration && <p className="small">Have an invitation or an existing account? Sign in to continue. For new access, <a href="mailto:info@mrhdigital.co.za">contact Mr. H Digital</a>.</p>}
+        <p className="small">Already signed in on this device? Your downloaded work can open offline. A new sign-in needs a connection.</p>
+      </div>}
       {view === "signin" && <SignIn auth={auth} notice={shownNotice} offline={offline} onForgotUser={() => { setNotice(undefined); setView("forgot-username"); }} onForgotPass={() => { setNotice(undefined); setView("forgot-password"); }} />}
       {view === "signin" && registration && <button className="btn btn--ghost" type="button" onClick={() => setView("register")}>Create an account</button>}
       {view === "register" && <Register auth={auth} onBack={() => setView("signin")} />}
       {view === "forgot-username" && <ForgotUsername auth={auth} onBack={() => setView("signin")} />}
       {view === "forgot-password" && <ForgotPassword auth={auth} onBack={() => setView("signin")} />}
+      {view === "signin" && <button type="button" className="linkbtn" onClick={() => setView("welcome")}>Back to welcome</button>}
     </Shell>
   );
 }
@@ -96,11 +110,23 @@ function Register({ auth, onBack }: { auth: Auth; onBack: () => void }) {
   </form>;
 }
 
-function Shell({ title, children }: { title: string; children: ReactNode }) {
+export function Shell({ title, children }: { title: string; children: ReactNode }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [title]);
   return (
     <main className="app authpage">
+      <StartupReady />
       <BrandHeader />
-      <section className="card form authcard"><h1 className="pagetitle">{title}</h1>{children}</section>
+      <div className="auth-layout">
+        <aside className="auth-story" aria-label="The AudEx approach">
+          <span className="onboarding-eyebrow">AUDIT EXCELLENCE</span>
+          <h2>Clarity on the floor.<br /><em>Confidence in every finding.</em></h2>
+          <p>Purpose-built for housekeeping audits in the places where care comes first.</p>
+          <div className="auth-story__steps"><span>01 <strong>Walk &amp; capture</strong></span><span>02 <strong>Understand the detail</strong></span><span>03 <strong>Share a clearer story</strong></span></div>
+          <p className="auth-story__credit">Designed &amp; developed by <a href="https://www.mrhdigital.co.za/" target="_blank" rel="noopener noreferrer">Mr. H Digital</a></p>
+        </aside>
+        <section className="card form authcard"><span className="onboarding-eyebrow">YOUR AUDEX WORKSPACE</span><h1 ref={heading} tabIndex={-1} className="pagetitle">{title}</h1>{children}</section>
+      </div>
     </main>
   );
 }

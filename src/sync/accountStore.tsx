@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore, t
 import type { SavedAudit } from "../audits/store";
 import type { AuditSite } from "../sites/store";
 import type { TrainingSession } from "../analytics/types";
+import { StartupReady } from "../components/StartupReady";
 
 export interface QueuedWrite { kind: "sites" | "training-sessions" | "audits"; id: string; body: string }
 export interface AccountData {
@@ -68,8 +69,8 @@ export function AccountProvider({ account, children }: { account: string; childr
     next.load().then(() => { if (live) setStore(next); }).catch(() => { if (live) setError("Device storage could not be opened. Reload to retry."); });
     return () => { live = false; };
   }, [account]);
-  if (error) return <p role="alert">{error}</p>;
-  if (!store || store.account !== account) return <p role="status">Opening your offline records…</p>;
+  if (error) return <main className="app startup-state"><StartupReady /><h1>We could not open device storage</h1><p role="alert">{error} Your saved records have not been cleared.</p><button className="btn" onClick={() => window.location.reload()}>Try again</button></main>;
+  if (!store || store.account !== account) return <main className="app startup-state"><p role="status">Opening your offline records...</p></main>;
   return <Context.Provider value={store}>{children}</Context.Provider>;
 }
 export function useAccountStore() {
