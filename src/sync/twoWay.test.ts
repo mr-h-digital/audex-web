@@ -11,6 +11,20 @@ async function store() { const s = new AccountStore(`test-${++n}`); await s.load
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const empty = () => json({ items: [], hasMore: false });
 describe("account two-way sync", () => {
+  it("pulls read-only history after expiry while preserving queued writes and device drafts", async () => {
+    const s = await store();
+    const draft = newAudit("draft", site, "2026-10-23", "WPC_V1");
+    s.change((d) => ({ ...d, sites: [site], audits: [draft], queue: [{ kind: "sites", id: site.id, body: recordBody(site) }] }));
+    const send = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(init?.method).not.toBe("PUT");
+      return empty();
+    });
+    await syncAccount(s, "", send, () => true, false);
+    expect(send).toHaveBeenCalledTimes(3);
+    expect(s.data.audits[0]).toEqual(draft);
+    expect(s.data.sites[0].dirty).toBe(true);
+    expect(s.data.queue).toHaveLength(1);
+  });
   it("keeps pending local edits and tombstones when pulling remote records", () => {
     const local = [{ ...site, archived: true }];
     expect(mergeRecords(local, [{ ...site, name: "Remote", dirty: false }], [], "sites")).toEqual(local);
@@ -166,7 +180,7 @@ describe("account two-way sync", () => {
     const s = await store();
     const send = vi.fn<SyncFetch>(async () => new Response(new Blob(["image"], { type: "image/jpeg" })));
     expect(await (await loadRemotePhoto(s.account, "a1", "p1", "https://api", send, () => true)).text()).toBe("image");
-    expect(send).toHaveBeenCalledWith("https://api/api/audits/a1/photos/p1");
+    expect(send).toHaveBeenCalledWith("https://api/api/photos/p1");
     expect(await (await loadRemotePhoto(s.account, "a1", "p1", "", async () => { throw new Error("offline"); }, () => true)).text()).toBe("image");
   });
   it("does not cache a download returned after an account transition and surfaces download errors", async () => {

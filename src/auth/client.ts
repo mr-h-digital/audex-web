@@ -40,7 +40,9 @@ export function createAuthApi(base: string, f: Fetch = (u, i) => fetch(u, i), to
   }
   type Msg = { message: string };
   return {
-    status: () => call<{ setupRequired: boolean }>("GET", "/api/auth/status"),
+    status: () => call<{ setupRequired: boolean; registrationEnabled?: boolean }>("GET", "/api/auth/status"),
+    register: (b: { username: string; email: string; displayName: string; password: string }) => call<Session>("POST", "/api/auth/register", b),
+    verifyEmail: (token: string) => call<Msg>("POST", "/api/auth/verify-email", { token }),
     setup: (b: { code: string; username: string; email: string; displayName: string; password: string }) => call<Session>("POST", "/api/auth/setup", b),
     login: (username: string, password: string) => call<Session>("POST", "/api/auth/login", { username, password }),
     logout: () => call<null>("POST", "/api/auth/logout", undefined, true),

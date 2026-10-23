@@ -4,6 +4,7 @@ import type { Theme } from "../theme/theme";
 import type { Auth } from "../auth/useAuth";
 import { AccountSection } from "./auth/AccountSection";
 import { PageHeading } from "./PageHeading";
+import { BillingPanel } from "../billing/BillingPanel";
 
 const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: "light", label: "Light", icon: "☀" },
@@ -55,6 +56,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
       </form>
 
       <AccountSection auth={auth} unsynced={unsynced} />
+      <BillingPanel />
 
       <section className="card">
         <h2>About</h2>

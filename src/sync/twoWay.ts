@@ -23,15 +23,15 @@ export function mergeRecords<T extends { id: string; dirty?: boolean }>(local: T
   }
   return [...map.values()];
 }
-const runners = new WeakMap<AccountStore, Promise<void>>();
-export function syncAccount(store: AccountStore, base: string, send: SyncFetch, current: () => boolean): Promise<void> {
+const runners = new WeakMap<AccountStore, { promise: Promise<void>; writable: boolean }>();
+export function syncAccount(store: AccountStore, base: string, send: SyncFetch, current: () => boolean, writable = true): Promise<void> {
   const running = runners.get(store);
-  if (running) return running;
-  const promise = run(store, base, send, current).finally(() => runners.delete(store));
-  runners.set(store, promise);
+  if (running) return running.writable === writable ? running.promise : running.promise.then(() => syncAccount(store, base, send, current, writable));
+  const promise = run(store, base, send, current, writable).finally(() => runners.delete(store));
+  runners.set(store, { promise, writable });
   return promise;
 }
-async function run(store: AccountStore, base: string, send: SyncFetch, current: () => boolean) {
+async function run(store: AccountStore, base: string, send: SyncFetch, current: () => boolean, writable: boolean) {
   await store.retryPersistence();
   const check = () => { if (!current()) throw new Error("Sign-in changed. Sync paused; your records remain safe."); };
   async function request(path: string, init?: RequestInit): Promise<Response> {
@@ -39,13 +39,17 @@ async function run(store: AccountStore, base: string, send: SyncFetch, current: 
     const response = await send(`${base}/api/${path}`, init);
     check();
     if (!response.ok) {
-      if (response.status === 409) throw new Error(`Sync conflict for ${path}. Local changes were kept. Retry after checking the other device; no changes are overwritten.`);
-      throw new Error(response.status === 401 ? "Sign in again to continue syncing." : `Sync failed (${response.status}) for ${path}. Retry when connected.`);
+      const data: unknown = await response.json().catch(() => null);
+      const message = data && typeof data === "object" && "message" in data && typeof data.message === "string" ? data.message : "";
+      if (response.status === 409) throw new Error(message
+        ? `${message} Pending local work has been kept.`
+        : `Sync conflict for ${path}. Local changes were kept. Retry after checking the other device; no changes are overwritten.`);
+      throw new Error(message || (response.status === 401 ? "Sign in again to continue syncing." : `Sync failed (${response.status}) for ${path}. Retry when connected.`));
     }
     return response;
   }
   // A queued request is persisted before sending and retained byte-for-byte until acknowledged.
-  for (const kind of ["sites", "training-sessions", "audits"] as const) {
+  for (const kind of writable ? ["sites", "training-sessions", "audits"] as const : []) {
     while (true) {
       check();
       let q = store.data.queue.find((x) => x.kind === kind);
@@ -81,7 +85,7 @@ async function run(store: AccountStore, base: string, send: SyncFetch, current: 
       await store.persisted();
     }
   }
-  for (const a of store.data.audits.filter((x) => x.state === "final" && x.synced)) {
+  for (const a of store.data.audits.filter((x) => writable && x.state === "final" && x.synced)) {
     for (const p of (a.photos ?? []).filter((x) => !x.uploaded)) {
       const blob = await getAccountPhoto(store.account, p.id);
       check();
@@ -129,11 +133,11 @@ async function run(store: AccountStore, base: string, send: SyncFetch, current: 
   await store.persisted();
 }
 
-export async function loadRemotePhoto(account: string, auditId: string, photoId: string, base: string, send: SyncFetch, current: () => boolean): Promise<Blob> {
+export async function loadRemotePhoto(account: string, _auditId: string, photoId: string, base: string, send: SyncFetch, current: () => boolean): Promise<Blob> {
   const cached = await getAccountPhoto(account, photoId);
   if (!current()) throw new Error("Sign-in changed.");
   if (cached) return cached;
-  const response = await send(`${base}/api/audits/${auditId}/photos/${photoId}`);
+  const response = await send(`${base}/api/photos/${encodeURIComponent(photoId)}`);
   if (!current()) throw new Error("Sign-in changed.");
   if (!response.ok) throw new Error(`Photo could not be downloaded (${response.status}). Connect and retry.`);
   const blob = await response.blob();
