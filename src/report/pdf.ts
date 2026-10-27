@@ -6,6 +6,7 @@ import { REPORT_AUTHOR, REPORT_ROLE } from "../config";
 export interface ReportOptions {
   demo: boolean;
   siteName: string;
+  scopeLabel?: string;
   /** Name and role printed as "Prepared by"; defaults to the configured report author. */
   author?: string;
   role?: string;
@@ -61,6 +62,7 @@ export async function buildReport(a: Analytics, o: ReportOptions): Promise<jsPDF
   text("Housekeeping compliance report", MX, y, 18, true); y += 7;
   text(`Period: ${a.period.label}  (${a.period.days} days)`, MX, y, 10, false, MUTED); y += 5;
   text(`Site: ${o.siteName}`, MX, y, 10, false, MUTED); y += 5;
+  if (o.scopeLabel) for (const line of wrap(`Audit scope: ${o.scopeLabel}`, CW)) { need(5); text(line, MX, y, 9, false, MUTED); y += 5; }
   text(`Prepared by ${author}, ${role}`, MX, y, 10, false, MUTED); y += 5;
   if (o.demo) {
     y += 2; doc.setFillColor(255, 243, 220); doc.rect(MX, y - 4, CW, 8, "F");

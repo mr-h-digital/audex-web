@@ -12,6 +12,7 @@ import { STATUS_META, StatusTag } from "./status";
 import { TrainingChart, TrainingTable } from "./TrainingEffect";
 import { TrendChart, TrendTable } from "./TrendChart";
 import { PageHeading } from "../PageHeading";
+import { comparisonGroups, comparisonKey } from "../../facilities/comparison";
 
 const sign = (n: number) => (n > 0 ? "+" : "") + n;
 
@@ -23,18 +24,22 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
   const [custom, setCustom] = useState({ from: "", to: today });
   const [siteId, setSiteId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [comparison, setComparison] = useState("");
+  const groups = useMemo(() => comparisonGroups(data.audits), [data.audits]);
+  const selectedGroup = groups.find((group) => group.key === comparison) ?? groups[0];
+  const comparable = data.audits.filter((audit) => comparisonKey(audit) === selectedGroup?.key);
 
-  const rules = ruleSet(activeRuleSetCode);
+  const rules = ruleSet(comparable[0]?.ruleSetCode ?? activeRuleSetCode);
   const period = resolvePeriod(preset, today, custom.from ? custom : undefined);
-  const a = useMemo(() => computeAnalytics({ audits: data.audits, trainings: data.trainings, sites: data.sites,
-    period, siteIds: siteId ? [siteId] : null }), [data, period.from, period.to, siteId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const a = useMemo(() => computeAnalytics({ audits: comparable, trainings: data.trainings, sites: data.sites,
+    period, siteIds: siteId ? [siteId] : null }), [data, selectedGroup?.key, period.from, period.to, siteId]); // eslint-disable-line react-hooks/exhaustive-deps
   const k = a.kpis;
   const total = Math.max(1, k.audits);
 
   const download = async () => {
     setBusy(true);
     try { (await import("../../report/download")).downloadReport(a, { demo: data.demo, siteName: data.sites.find((s) => s.id === siteId)?.name ?? "All sites", author: author.name, role: author.role,
-      compliantMin: rules.compliantMinTenths / 10, notYetMin: rules.notYetMinTenths / 10 }); }
+      compliantMin: rules.compliantMinTenths / 10, notYetMin: rules.notYetMinTenths / 10, scopeLabel: selectedGroup?.label }); }
     finally { setBusy(false); }
   };
 
@@ -45,6 +50,12 @@ export function Dashboard({ real, author }: { real: RealData; author: { name: st
         ? <p className="banner">Demo data: made-up sites and audits, not real results.{" "}
           <button type="button" className="linkbtn" onClick={() => setForceDemo(false)}>Show my audits</button></p>
         : <p className="small"><button type="button" className="linkbtn" onClick={() => setForceDemo(true)}>Preview with demo data</button></p>}
+      {groups.length > 0 && <section className="card">
+        <label className="field">Comparable audit scope<select value={selectedGroup?.key ?? ""} onChange={(e) => setComparison(e.target.value)}>
+          {groups.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
+        </select></label>
+        <p className="small">Only audits using this template, scoring rule set and area scope are compared. Different standards are not combined into one average.</p>
+      </section>}
       <FilterBar preset={preset} onPreset={(p) => { setPreset(p); if (p === "custom" && !custom.from) setCustom({ from: period.from, to: period.to }); }}
         from={custom.from || period.from} to={custom.to} onFrom={(from) => setCustom((c) => ({ ...c, from }))} onTo={(to) => setCustom((c) => ({ ...c, to }))}
         sites={data.sites} siteId={siteId} onSite={setSiteId} periodLabel={period.label} onDownload={download} busy={busy} />

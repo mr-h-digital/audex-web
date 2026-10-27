@@ -1,0 +1,65 @@
+{
+  "facilityTypes": [
+    { "code": "HOSPITAL", "name": "Hospital" },
+    { "code": "CLINIC", "name": "Clinic" },
+    { "code": "RETIREMENT_VILLAGE", "name": "Retirement village" },
+    { "code": "OTHER", "name": "Other facility" }
+  ],
+  "areas": [
+    { "code": "CONSULTING", "name": "Consulting rooms" },
+    { "code": "EMERGENCY", "name": "Emergency care" },
+    { "code": "WARDS", "name": "Patient wards" },
+    { "code": "ISOLATION", "name": "Isolation areas" },
+    { "code": "RESIDENTIAL", "name": "Residential rooms" },
+    { "code": "FRAIL_CARE", "name": "Frail care / nursing unit" },
+    { "code": "KITCHEN", "name": "Kitchen / food service" },
+    { "code": "LAUNDRY", "name": "Laundry" },
+    { "code": "SHARED", "name": "Shared / communal areas" }
+  ],
+  "templates": [
+    {
+      "code": "WPC_BASELINE_V1",
+      "name": "WPC housekeeping baseline",
+      "version": 1,
+      "status": "PUBLISHED",
+      "facilityTypes": ["HOSPITAL", "CLINIC", "RETIREMENT_VILLAGE", "OTHER"],
+      "scope": "BASELINE",
+      "coreItemKeys": [],
+      "modules": [],
+      "notice": "Existing full WPC checklist, not a facility-specific standard. Facility and area selections are recorded for context only; they do not remove checks."
+    },
+    {
+      "code": "HOSPITAL_V1",
+      "name": "Hospital-specific checklist",
+      "version": 1,
+      "status": "DRAFT",
+      "facilityTypes": ["HOSPITAL"],
+      "scope": "MAPPED",
+      "coreItemKeys": [],
+      "modules": [],
+      "notice": "Awaiting approved core requirements, area mappings and scoring review. Not available for audits."
+    },
+    {
+      "code": "CLINIC_V1",
+      "name": "Clinic-specific checklist",
+      "version": 1,
+      "status": "DRAFT",
+      "facilityTypes": ["CLINIC"],
+      "scope": "MAPPED",
+      "coreItemKeys": [],
+      "modules": [],
+      "notice": "Awaiting approved core requirements, area mappings and scoring review. Not available for audits."
+    },
+    {
+      "code": "RETIREMENT_VILLAGE_V1",
+      "name": "Retirement-village-specific checklist",
+      "version": 1,
+      "status": "DRAFT",
+      "facilityTypes": ["RETIREMENT_VILLAGE"],
+      "scope": "MAPPED",
+      "coreItemKeys": [],
+      "modules": [],
+      "notice": "Awaiting approved core requirements, area mappings and scoring review. Not available for audits."
+    }
+  ]
+}

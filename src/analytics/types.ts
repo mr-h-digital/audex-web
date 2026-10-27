@@ -10,6 +10,9 @@ export interface AuditSummary {
   siteId: string;
   date: string; // YYYY-MM-DD
   ruleSetCode: string;
+  templateCode?: string;
+  facilityType?: string | null;
+  scopeKey?: string;
   status: Status;
   earnedHalf: number;
   possibleHalf: number;

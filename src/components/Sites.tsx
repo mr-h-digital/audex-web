@@ -6,6 +6,7 @@ import { fmtDate } from "../analytics/dates";
 import type { AuditSite, SiteDraft } from "../sites/store";
 import { PageHeading } from "./PageHeading";
 import { useBilling } from "../billing/BillingProvider";
+import { facilityTypes } from "../facilities/catalog";
 
 const EMPTY: SiteDraft = { name: "", address: "", unitManager: "", supervisor: "" };
 
@@ -25,7 +26,7 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
     editing ? onUpdate(editing, draft) : onAdd(draft);
     setDraft(EMPTY); setEditing(null);
   };
-  const field = (k: keyof SiteDraft, label: string, req = false) => (
+  const field = (k: "name" | "address" | "unitManager" | "supervisor", label: string, req = false) => (
     <label className="field">{label}
       <input value={draft[k]} required={req} disabled={!writable} onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} /></label>
   );
@@ -36,6 +37,11 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
       <form className="card form" data-tour="site-form" onSubmit={submit}>
         <h2>{editing ? "Edit site" : "Add a site"}</h2>
         {field("name", "Site name (e.g. clinic, hospital or village)", true)}
+        <label className="field">Facility type<select disabled={!writable} value={draft.facilityType ?? ""} onChange={(e) => setDraft({ ...draft, facilityType: e.target.value || undefined })}>
+          <option value="">Not specified</option>
+          {draft.facilityType && !facilityTypes.some((type) => type.code === draft.facilityType) && <option value={draft.facilityType}>{draft.facilityType} (existing classification)</option>}
+          {facilityTypes.map((type) => <option key={type.code} value={type.code}>{type.name}</option>)}
+        </select></label>
         {field("address", "Address")}
         {field("unitManager", "Unit manager (housekeeping)")}
         {field("supervisor", "Housekeeping supervisor")}
@@ -52,9 +58,9 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
           <ul className="sitelist">{shown.map((s) => (
             <li key={s.id}>
               <div><strong>{s.name}</strong>{s.archived && <span className="risk">Archived</span>}
-                <div className="small">{[s.address, s.unitManager && `Manager: ${s.unitManager}`, s.supervisor && `Supervisor: ${s.supervisor}`].filter(Boolean).join(" · ")}</div></div>
+                <div className="small">{[facilityTypes.find((type) => type.code === s.facilityType)?.name ?? s.facilityType, s.address, s.unitManager && `Manager: ${s.unitManager}`, s.supervisor && `Supervisor: ${s.supervisor}`].filter(Boolean).join(" · ")}</div></div>
               <div className="sitelist__btns">
-                {!s.archived && <button type="button" className="chip" disabled={!writable} onClick={() => { setEditing(s.id); setDraft({ name: s.name, address: s.address, unitManager: s.unitManager, supervisor: s.supervisor }); }}>Edit</button>}
+                {!s.archived && <button type="button" className="chip" disabled={!writable} onClick={() => { setEditing(s.id); setDraft({ name: s.name, address: s.address, unitManager: s.unitManager, supervisor: s.supervisor, facilityType: s.facilityType }); }}>Edit</button>}
                 <button type="button" className="chip" disabled={!writable} onClick={() => onArchive(s.id, !s.archived)}>{s.archived ? "Restore" : "Archive"}</button>
               </div>
             </li>))}

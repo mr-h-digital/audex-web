@@ -102,6 +102,20 @@ Deploy `audex-api` migration V10 first and bootstrap the single Owner with an in
 
 Administration requires a working server connection; changes are not queued offline. Suspension and role changes revoke the target's server sessions/reset links but cannot remotely erase offline data or cancel subscriptions. Restored users must sign in again. Facility-specific checklists and standards are not changed in this release.
 
+### Facility types, audit scope and standards
+
+Use **Sites > Facility type** to classify a hospital, clinic, retirement village or other facility. Before starting an audit, confirm the facility type, record its areas/services, select a published **Audit standard**, and open **Preview checklist** to see its requirements. Areas are selected per audit to account for facilities with services not implied by their type.
+
+**The only published template is currently the full WPC housekeeping baseline (264 checks).** Choosing a facility type or area does not yet remove any baseline checks. The selection screen explains this and lists the relevant hospital/clinic/retirement-village drafts as awaiting approval; draft standards cannot be selected. No compliance mappings have been invented. Continue to follow your organisation's guidance on genuine N/A answers until an appropriate standard is approved.
+
+Once approved mappings are published through a reviewed release, the resolver includes mandatory core requirements and required modules plus selected optional area modules. Scoring, progress, N/A requirements and PDF findings use the audit's own checklist, not every item in the global catalogue. The template and facility/area context are copied into an immutable audit snapshot at creation; changing a site affects future selection defaults, not existing drafts or finalised records. To change the scope, start a new draft rather than switching standards mid-audit.
+
+Existing drafts and finalised audits without a snapshot keep the original full WPC baseline. Synced audits download the server's frozen snapshot. Reports include standard name/version, facility and area context and the template notice. Dashboard averages/training comparisons are restricted to one comparable template, scoring rule set and area scope at a time; the exported report identifies that group.
+
+Deploy `audex-api` migration V11 before this frontend. `shared/facility-templates.json`, `shared/template.json` and rule sets must match the API. The server independently resolves the selected standard and rejects unpublished templates, forged/reduced snapshots and answers outside scope. Snapshot/version mismatches are surfaced as sync conflicts; the original local audit remains intact.
+
+To publish a facility-specific standard, obtain the approved applicability matrix, sources, core item list, mandatory and optional area modules, scoring review and approval details. Follow the API README's publication procedure and release a new immutable template version. Until then, the reduced facility-specific checklists remain deliberately unavailable.
+
 ## Project layout
 
 | Path | Purpose |

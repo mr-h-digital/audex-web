@@ -3,16 +3,16 @@ import { useBilling } from "../billing/BillingProvider";
 
 /** A site is the whole facility (WPC uses "site" and "unit" to mean the same thing). */
 export interface AuditSite { id: string; name: string; address: string; unitManager: string; supervisor: string; archived: boolean; facilityType?: string; revision?: number; updatedAt?: string; dirty?: boolean }
-export type SiteDraft = Pick<AuditSite, "name" | "address" | "unitManager" | "supervisor">;
+export type SiteDraft = Pick<AuditSite, "name" | "address" | "unitManager" | "supervisor" | "facilityType">;
 
 export function addSite(list: AuditSite[], d: SiteDraft, id: string): AuditSite[] {
   const name = d.name.trim();
   if (!name) return list;
   if (list.some((s) => !s.archived && s.name.toLowerCase() === name.toLowerCase())) return list;
-  return [...list, { id, name, address: d.address.trim(), unitManager: d.unitManager.trim(), supervisor: d.supervisor.trim(), archived: false, revision: 0, dirty: true }];
+  return [...list, { id, name, address: d.address.trim(), unitManager: d.unitManager.trim(), supervisor: d.supervisor.trim(), facilityType: d.facilityType || undefined, archived: false, revision: 0, dirty: true }];
 }
 export const updateSite = (list: AuditSite[], id: string, d: SiteDraft): AuditSite[] =>
-  d.name.trim() ? list.map((s) => (s.id === id ? { ...s, dirty: true, name: d.name.trim(), address: d.address.trim(), unitManager: d.unitManager.trim(), supervisor: d.supervisor.trim() } : s)) : list;
+  d.name.trim() ? list.map((s) => (s.id === id ? { ...s, dirty: true, name: d.name.trim(), address: d.address.trim(), unitManager: d.unitManager.trim(), supervisor: d.supervisor.trim(), facilityType: d.facilityType || undefined } : s)) : list;
 export const setArchived = (list: AuditSite[], id: string, archived: boolean): AuditSite[] =>
   list.map((s) => (s.id === id ? { ...s, archived, dirty: true } : s));
 

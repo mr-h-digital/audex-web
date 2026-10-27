@@ -16,7 +16,9 @@ import { addPhoto, photosFor, photosWaiting, pruneOrphans, removePhoto } from ".
 import { PhotoAccess, usePhotoLoader } from "./photos/PhotoAccess";
 import { ScorePanel } from "./components/ScorePanel";
 import { Sites } from "./components/Sites";
-import { activeRuleSetCode, ruleSet, ruleSets, sections } from "./scoring/catalog";
+import { activeRuleSetCode, ruleSet, ruleSets } from "./scoring/catalog";
+import { auditTemplate, facilityTypes, templateItemCount } from "./facilities/catalog";
+import { FacilitySelection, initialFacilitySelection, type FacilitySelectionValue } from "./facilities/FacilitySelection";
 import type { Result } from "./scoring/types";
 import { useSites } from "./sites/store";
 import { API_URL, pending } from "./sync/sync";
@@ -41,7 +43,6 @@ const RESULTS: { value: Result; label: string; icon: string; cls: string }[] = [
   { value: "NON_COMPLIANT", label: "Non-compliant", icon: "✕", cls: "n" },
   { value: "NA", label: "N/A", icon: "–", cls: "na" },
 ];
-const TOTAL_ITEMS = sections.reduce((n, s) => n + s.items.length, 0);
 const nice = (s: string) => s.toLowerCase().replace(/(^|[\s/&(-])([a-z])/g, (_, a, b) => a + b.toUpperCase());
 const SEV: Record<string, string> = { CRITICAL: "Critical", MAJOR: "Major", MINOR: "Minor" };
 const saveLabel = (a: SavedAudit) => a.state === "draft" ? "Draft saved" : a.synced ? "Uploaded" : API_URL ? "Saved, uploads when online" : "Saved on this phone";
@@ -70,6 +71,7 @@ function Main({ auth }: { auth: Auth }) {
   const [siteId, setSiteId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [ruleCode, setRuleCode] = useState(activeRuleSetCode);
+  const [facilitySelection, setFacilitySelection] = useState<FacilitySelectionValue>(initialFacilitySelection);
   const active = sites.filter((s) => !s.archived);
   const current = audits.find((a) => a.id === openId) ?? null;
   const queued = pending(audits).length;
@@ -133,7 +135,7 @@ function Main({ auth }: { auth: Auth }) {
     if (!billing.permit()) return;
     const site = active.find((s) => s.id === siteId);
     if (!site) return;
-    const a = newAudit(crypto.randomUUID(), site, date, ruleCode, { name: profile.name, role: roleLine(profile) });
+    const a = newAudit(crypto.randomUUID(), site, date, ruleCode, { name: profile.name, role: roleLine(profile) }, facilitySelection);
     save(a); setOpenId(a.id);
   };
 
@@ -191,9 +193,14 @@ function Main({ auth }: { auth: Auth }) {
               <h2>Start an audit</h2>
               {active.length === 0 ? <><p className="empty">Add the site you are auditing first.</p>
                 <button type="button" className="btn" onClick={() => setTab("sites")}>Add a site</button></> : <>
-                <label className="field">Site<select value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+                <label className="field">Site<select value={siteId} onChange={(e) => {
+                  setSiteId(e.target.value);
+                  const type = active.find((site) => site.id === e.target.value)?.facilityType;
+                  setFacilitySelection({ ...initialFacilitySelection, facilityType: facilityTypes.find((item) => item.code === type)?.code ?? null });
+                }}>
                   <option value="">Choose a site…</option>{active.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
                 <label className="field">Audit date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+                <FacilitySelection value={facilitySelection} onChange={setFacilitySelection} />
                 <button type="button" className="btn" disabled={!siteId || !billing.writable} onClick={start}>Start audit</button>
                 <details className="adv"><summary>Scoring rules (advanced)</summary>
                   <select aria-label="Scoring rules" value={ruleCode} onChange={(e) => setRuleCode(e.target.value)}>
@@ -232,6 +239,9 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
   const billing = useBilling();
   const loadPhoto = usePhotoLoader();
   const rules = ruleSet(audit.ruleSetCode);
+  const template = useMemo(() => auditTemplate(audit), [audit.templateSnapshot, audit.templateCode, audit.facilityType, audit.facilityAreas]);
+  const sections = template.sections;
+  const totalItems = templateItemCount(template);
   const score = useMemo(() => scoreOf(audit), [audit]);
   const locked = audit.state === "final" || !billing.writable;
   const missing = useMemo(() => new Set(missingNaReasons(audit)), [audit]);
@@ -287,7 +297,11 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
     <div className="audit-page">
       <p className="auditing" data-tour="audit-start"><span><strong>{audit.siteName}</strong><br />{fmtDate(audit.date)}</span>
         <button type="button" className="chip" onClick={onClose}>Back to audits</button></p>
-      <ScorePanel score={score} rules={rules} answered={TOTAL_ITEMS - score.unanswered} total={TOTAL_ITEMS} />
+      <details className="audit-scope"><summary>{template.name} · v{template.version} · {template.facilityName}</summary>
+        <p className="small">{template.notice}</p>
+        <p className="small">Areas recorded: {template.areas.map((area) => area.name).join(", ") || "None recorded"}. {totalItems} checklist items. Scope is fixed for this audit.</p>
+      </details>
+      <ScorePanel score={score} rules={rules} answered={totalItems - score.unanswered} total={totalItems} />
       {audit.state === "final" && <p className="banner banner--ok">This audit is finalised and saved. Answers can no longer be changed.</p>}
       {audit.state === "draft" && !billing.writable && <p className="banner">This draft has been preserved. Renew or refresh access to edit it again.</p>}
       <section className="card form">

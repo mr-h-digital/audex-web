@@ -1,3 +1,9 @@
+.facility-selection { display: grid; gap: 12px; margin: 16px 0; border-top: 1px solid var(--line); padding-top: 12px; }
+.facility-selection h3 { margin: 0; font-size: 1rem; }
+.facility-areas { display: grid; gap: 8px; }
+.facility-areas label { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.facility-selection details ul { padding-left: 20px; font-size: .9rem; }
+.facility-selection details li { margin-bottom: 8px; }
 /* ---- theme tokens: light by default, dark by choice (Settings) or by the phone's own setting ---- */
 :root {
   color-scheme: light;

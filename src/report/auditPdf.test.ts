@@ -14,6 +14,14 @@ describe("audit PDF", () => {
     expect(out).toContain("Chernay Hildebrandt");
   });
   it("names the file by site and date", () => expect(auditFilename(a)).toBe("AudEx-audit_Tygerberg-Clinic_2026-10-15.pdf"));
+  it("uses the frozen facility and area metadata in the report", async () => {
+    const scoped = newAudit("scoped", { id: "s1", name: "Clinic", unitManager: "", supervisor: "" }, "2026-10-15", "WPC_V1", undefined,
+      { templateCode: "WPC_BASELINE_V1", facilityType: "CLINIC", areas: ["CONSULTING"] });
+    const out = String((await buildAuditReport({ ...scoped, answers: a.answers })).output());
+    expect(out).toContain("WPC housekeeping baseline");
+    expect(out).toContain("Facility: Clinic");
+    expect(out).toContain("Consulting rooms");
+  });
   it("refuses to silently omit a photo that is unavailable offline", async () => {
     vi.stubGlobal("fetch", async () => { throw new Error("offline"); });
     try {

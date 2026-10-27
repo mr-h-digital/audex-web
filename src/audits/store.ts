@@ -5,6 +5,7 @@ import type { PhotoMeta } from "../photos/photos";
 import { ruleSet, toScoredItems } from "../scoring/catalog";
 import { evaluate } from "../scoring/engine";
 import type { Result, ScoreResult } from "../scoring/types";
+import { auditTemplate, BASELINE_TEMPLATE, resolveTemplate, type TemplateSnapshot } from "../facilities/catalog";
 
 export type Answers = Record<string, Result | undefined>;
 
@@ -15,6 +16,10 @@ export interface SavedAudit {
   siteName: string;
   date: string;
   ruleSetCode: string;
+  templateCode?: string;
+  facilityType?: string | null;
+  facilityAreas?: string[];
+  templateSnapshot?: TemplateSnapshot;
   answers: Answers;
   /** Why an item was marked N/A (required for every N/A). */
   naReasons?: Record<string, string>;
@@ -34,8 +39,8 @@ export interface SavedAudit {
   score?: ScoreResult;
 }
 
-export const scoreOf = (a: Pick<SavedAudit, "answers" | "ruleSetCode" | "score">): ScoreResult =>
-  a.score ?? evaluate(toScoredItems(a.answers), ruleSet(a.ruleSetCode));
+export const scoreOf = (a: Pick<SavedAudit, "answers" | "ruleSetCode" | "score" | "templateSnapshot" | "templateCode" | "facilityType" | "facilityAreas">): ScoreResult =>
+  a.score ?? evaluate(toScoredItems(a.answers, auditTemplate(a).sections), ruleSet(a.ruleSetCode));
 
 export function summarise(a: SavedAudit): AuditSummary {
   const r = scoreOf(a);
@@ -43,12 +48,17 @@ export function summarise(a: SavedAudit): AuditSummary {
     id: a.id, siteId: a.siteId, date: a.date, ruleSetCode: a.ruleSetCode, status: r.status,
     earnedHalf: r.earnedHalf, possibleHalf: r.possibleHalf, percent: r.percent,
     criticalFailures: r.criticalFailures, sectionScores: r.sectionScores,
-    failedItems: toScoredItems(a.answers).filter((i) => i.result === "NON_COMPLIANT").map((i) => ({ key: i.key, severity: i.severity })),
+    failedItems: toScoredItems(a.answers, auditTemplate(a).sections).filter((i) => i.result === "NON_COMPLIANT").map((i) => ({ key: i.key, severity: i.severity })),
+    templateCode: auditTemplate(a).code, facilityType: a.facilityType ?? null,
+    scopeKey: auditTemplate(a).code === BASELINE_TEMPLATE ? "baseline" : auditTemplate(a).areas.map((area) => area.code).sort().join(","),
   };
 }
 
-export function newAudit(id: string, site: { id: string; name: string; unitManager: string; supervisor: string }, date: string, ruleSetCode: string, by?: { name: string; role: string }): SavedAudit {
-  return { auditor: by?.name, auditorRole: by?.role, id, siteId: site.id, siteName: site.name, date, ruleSetCode, answers: {}, unitManager: site.unitManager, supervisor: site.supervisor, state: "draft", synced: false };
+export function newAudit(id: string, site: { id: string; name: string; unitManager: string; supervisor: string; facilityType?: string }, date: string, ruleSetCode: string, by?: { name: string; role: string }, selection?: { templateCode: string; facilityType: string | null; areas: string[] }): SavedAudit {
+  const snapshot = resolveTemplate(selection?.templateCode, selection?.facilityType ?? null, selection?.areas);
+  return { auditor: by?.name, auditorRole: by?.role, id, siteId: site.id, siteName: site.name, date, ruleSetCode,
+    templateCode: snapshot.code, facilityType: snapshot.facilityType, facilityAreas: snapshot.areas.map((area) => area.code), templateSnapshot: snapshot,
+    answers: {}, unitManager: site.unitManager, supervisor: site.supervisor, state: "draft", synced: false };
 }
 
 /** Item keys answered N/A without a written reason. */

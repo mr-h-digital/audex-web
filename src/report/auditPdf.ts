@@ -5,7 +5,8 @@ import type { SavedAudit } from "../audits/store";
 import { scoreOf } from "../audits/store";
 import { getPhoto } from "../photos/blobStore";
 import { pdfJpegDataUrl } from "../photos/compress";
-import { ruleSet, sections } from "../scoring/catalog";
+import { ruleSet } from "../scoring/catalog";
+import { auditTemplate } from "../facilities/catalog";
 import { explain } from "../scoring/explain";
 
 const TEAL: [number, number, number] = [11, 77, 96];
@@ -23,6 +24,8 @@ export async function buildAuditReport(a: SavedAudit, logo: string | null = null
   const author = a.auditor || REPORT_AUTHOR, role = a.auditorRole || REPORT_ROLE;
   const rules = ruleSet(a.ruleSetCode);
   const score = scoreOf(a);
+  const template = auditTemplate(a);
+  const sections = template.sections;
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   doc.setProperties({ title: `AudEx audit ${a.siteName} ${a.date}`, author, creator: "AudEx" });
   let y = 0;
@@ -42,6 +45,11 @@ export async function buildAuditReport(a: SavedAudit, logo: string | null = null
     text(k, MX, y, 10, false, MUTED); text(v, MX + 48, y, 10); y += 5;
   }
   text(role, MX, y + 1, 8.5, false, MUTED); y += 10;
+  for (const line of wrap(`Audit standard: ${template.name} v${template.version}. Facility: ${template.facilityName}. Areas: ${template.areas.map((area) => area.name).join(", ") || "not recorded"}.`, CW)) {
+    need(5); text(line, MX, y, 9); y += 5;
+  }
+  for (const line of wrap(template.notice, CW)) { need(5); text(line, MX, y, 8, false, MUTED); y += 4; }
+  y += 4;
 
   text(`${score.percent}%`, MX, y + 10, 34, true, TEAL);
   text(LABEL[score.status], MX + 52, y + 4, 14, true);

@@ -16,8 +16,8 @@ export function ruleSet(code: string): RuleSet {
 }
 
 /** Builds the scorable list from the auditor's answers (items with no answer are unanswered). */
-export function toScoredItems(answers: Record<string, Result | undefined>): ScoredItem[] {
-  return sections.flatMap((s) =>
+export function toScoredItems(answers: Record<string, Result | undefined>, templateSections: TemplateSection[] = sections): ScoredItem[] {
+  return templateSections.flatMap((s) =>
     s.items.map((i) => ({ key: i.key, sectionCode: s.code, highRisk: s.highRisk, severity: i.severity,
       weight: i.weight, result: answers[i.key] ?? null })));
 }
