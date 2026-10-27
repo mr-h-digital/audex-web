@@ -16,6 +16,7 @@ function Thumb({ auditId, photo, onRemove }: { auditId: string; photo: PhotoMeta
   return (
     <figure className="thumb">
       {url ? <img src={url} alt={photo.caption || "Audit photo"} /> : <div className="thumb__ph" />}
+      {url && <a className="thumb__save" href={url} download={`audex-photo-${photo.id}`}>Save photo</a>}
       {error && <button type="button" className="chip" title={error} onClick={() => setRetry((n) => n + 1)}>Retry photo</button>}
       {onRemove && <button type="button" className="thumb__x" aria-label="Remove photo" onClick={onRemove}>✕</button>}
     </figure>

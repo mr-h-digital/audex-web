@@ -1,4 +1,5 @@
 import { useAccountStore } from "../sync/accountStore";
+import { useBilling } from "../billing/BillingProvider";
 
 /** A site is the whole facility (WPC uses "site" and "unit" to mean the same thing). */
 export interface AuditSite { id: string; name: string; address: string; unitManager: string; supervisor: string; archived: boolean; facilityType?: string; revision?: number; updatedAt?: string; dirty?: boolean }
@@ -18,9 +19,17 @@ export const setArchived = (list: AuditSite[], id: string, archived: boolean): A
 /** Local account records remain editable offline; sync acknowledges dirty changes by revision. */
 export function useSites() {
   const { store, data } = useAccountStore();
+  const billing = useBilling();
   const sites = data.sites;
-  const add = (d: SiteDraft) => store.change((l) => ({ ...l, sites: addSite(l.sites, d, crypto.randomUUID()) }));
-  const update = (id: string, d: SiteDraft) => store.change((l) => ({ ...l, sites: updateSite(l.sites, id, d) }));
-  const archive = (id: string, a: boolean) => store.change((l) => ({ ...l, sites: setArchived(l.sites, id, a) }));
+  const capacity = () => {
+    if (!billing.legacy && billing.access && store.data.sites.filter((s) => !s.archived).length >= billing.access.siteLimit) {
+      window.alert("Your active-site limit has been reached. Archive an unused site or choose a different plan in Settings.");
+      return false;
+    }
+    return true;
+  };
+  const add = (d: SiteDraft) => { if (billing.permit() && capacity()) store.change((l) => ({ ...l, sites: addSite(l.sites, d, crypto.randomUUID()) })); };
+  const update = (id: string, d: SiteDraft) => { if (billing.permit()) store.change((l) => ({ ...l, sites: updateSite(l.sites, id, d) })); };
+  const archive = (id: string, a: boolean) => { if (billing.permit() && (a || capacity())) store.change((l) => ({ ...l, sites: setArchived(l.sites, id, a) })); };
   return { sites, add, update, archive };
 }

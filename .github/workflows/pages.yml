@@ -29,6 +29,8 @@ jobs:
       - run: npm run build
         env:
           VITE_API_URL: ${{ vars.AUDEX_API_URL }}
+          VITE_BILLING_REQUIRED: ${{ vars.AUDEX_BILLING_REQUIRED }}
+          VITE_ENTITLEMENT_PUBLIC_KEY: ${{ vars.AUDEX_ENTITLEMENT_PUBLIC_KEY }}
       # GitHub Pages has no "serve index.html for unknown paths" rule. Its 404.html does the same job,
       # so a reset-password link from an email still opens the app.
       - run: cp dist/index.html dist/404.html

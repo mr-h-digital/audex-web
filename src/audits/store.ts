@@ -1,4 +1,5 @@
 import { useAccountStore } from "../sync/accountStore";
+import { useBilling } from "../billing/BillingProvider";
 import type { AuditSummary } from "../analytics/types";
 import type { PhotoMeta } from "../photos/photos";
 import { ruleSet, toScoredItems } from "../scoring/catalog";
@@ -67,8 +68,9 @@ export const upsert = (list: SavedAudit[], a: SavedAudit): SavedAudit[] =>
 
 export function useAudits() {
   const { store, data } = useAccountStore();
+  const billing = useBilling();
   const audits = data.audits;
-  const setAudits = (fn: (list: SavedAudit[]) => SavedAudit[]) => store.change((d) => ({ ...d, audits: fn(d.audits) }));
+  const setAudits = (fn: (list: SavedAudit[]) => SavedAudit[]) => { if (billing.permit()) store.change((d) => ({ ...d, audits: fn(d.audits) })); };
   const save = (a: SavedAudit) => setAudits((l) => upsert(l, a));
   const remove = (id: string) => setAudits((l) => l.filter((x) => x.id !== id || x.state === "final"));
   const markSynced = (ids: string[]) => setAudits((l) => l.map((x) => (ids.includes(x.id) ? { ...x, synced: true } : x)));

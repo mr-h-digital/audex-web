@@ -50,6 +50,22 @@ VITE_API_URL=http://localhost:8080
 
 Restart the dev server after changing environment variables. Keep real secrets out of frontend environment variables: values prefixed with `VITE_` are included in the browser build.
 
+### Subscription-enabled deployment
+
+The API rollout is feature-gated and requires server configuration and verified immutable account IDs; see `audex-api`'s **Subscription rollout** instructions before enabling it.
+
+For a subscription deployment set `VITE_BILLING_REQUIRED=true` and `VITE_ENTITLEMENT_PUBLIC_KEY` to the API's base64 DER SPKI public P-256 key, alongside `VITE_API_URL`. Never copy its private signing key or Paystack secret into this app. GitHub Pages builds read repository **Variables** `AUDEX_API_URL`, `AUDEX_BILLING_REQUIRED`, and `AUDEX_ENTITLEMENT_PUBLIC_KEY`. Rebuild after changing any of them. Required subscription builds refuse missing API/public-key configuration and cannot fall back to unrestricted local-only mode.
+
+Signup appears only when the API enables public registration. Users verify ownership through a single-use email link before editing or checking out. A verified new account receives a 14-day trial (one active site, 100 MB photos, no card); Solo is R199/month or R1,990/year (3 sites, 1 GB), Professional R399/month or R3,990/year (15 sites, 5 GB). All core features are included; accounts are individual, with no shared workspaces. Prices are charged without VAT because Mr. H Digital is not VAT registered.
+
+Settings shows signed access, usage, test-mode status, plan choices, Paystack-hosted checkout/card management, cancellation and access refresh. A checkout return requests server verification; the URL is never accepted as proof of payment. Paid subscriptions renew until cancelled; cancellation preserves verified paid access. Existing subscriptions must be cancelled and their paid period finished before choosing a different plan. Test checkout is labelled and must not be represented as a live purchase.
+
+Signed entitlements are pinned to the configured public key and signed-in account. Offline editing is limited to seven days from the latest access refresh, never beyond trial/paid expiry. Local clock rollback is detected as a usability safeguard, not a tamper-proof offline security boundary; the server enforces real access independently. A disconnected client may retain its existing lease until expiry after a refund/revocation.
+
+When access expires, drafts and queued writes are preserved; sync pulls existing history without attempting writes. Finalised audits retain PDF exports, and all audits/drafts have JSON metadata export. Settings can export downloaded account records; photo files are saved separately from each audit. Remote photos need to be cached for offline reports. JSON exports are not an automatic restore/import mechanism or a full image backup. Do not clear browser storage to resolve billing problems.
+
+The two approved existing-account complimentary grants are bound and verified by the API, not inferred from signup emails or frontend code. Only the approved administrator slot exposes the audited grant controls. Limited-plan legacy photo uploads stay paused until the administrator reconciles real object sizes; no guessed zero-byte allowance is used.
+
 ### Available scripts
 
 | Command | What it does |
@@ -115,13 +131,23 @@ Finalized audits upload through `PUT /api/audits/{id}`; `GET /api/audits` and `G
 
 Exact upload request snapshots are persisted before sending, so retrying after a lost response reuses the original body and revision. Edits made while a request is in flight remain pending and use the acknowledged revision next. Conflicts (409), sign-in failures, missing photos, storage failures and connection errors remain visible with retry controls; a conflict is never force-overwritten. Check the other device before retrying conflicting edits.
 
-Photos upload after their audit. Discovered remote photo metadata is marked uploaded, not queued as a new attachment. Images download on demand using bearer-authenticated `GET /api/audits/{id}/photos/{photoId}`, then remain available offline in that account's cache. Open photos or export the audit report while online once to cache its images. Reports refuse to silently omit uncached photos. Sign-out/account changes stop in-flight responses from changing another account's data.
+Photos upload after their audit. Discovered remote photo metadata is marked uploaded, not queued as a new attachment. Images download on demand using bearer-authenticated `GET /api/photos/{photoId}`, then remain available offline in that account's cache. Open photos or export the audit report while online once to cache its images. Reports refuse to silently omit uncached photos. Sign-out/account changes stop in-flight responses from changing another account's data.
 
 Older unscoped `audex.*.v1` records and the `audex-photos` database are left untouched and are not automatically assigned to anyone. The app offers an explicit **Confirm ownership and import** action. Use it only when every older record belongs to the current account. It copies photos and records into that account, queues their upload, and records the claim only after persistence succeeds. Original legacy data is retained as a recovery copy. Do not clear browser storage before checking migration and sync.
 
 ### Accounts
 
 With the API configured, the app provides first-account setup, sign-in, password and email changes, sign-out, username recovery and password reset. Sessions support offline app use; signing out does not delete locally saved audits.
+
+### Welcome and workspace setup
+
+The branded launch overlay exits when a usable authentication screen, workspace or storage-error screen has rendered, rather than holding returning users behind a mandatory timer. A stalled JavaScript/storage launch exposes reload guidance after ten seconds; no recovery action clears saved records. Authentication screens share a responsive editorial layout, with reduced-motion and light/dark support.
+
+Signed-out users see a welcome screen; account creation appears only when the API enables registration. Password-reset and email-verification links retain priority. Signed-in accounts with a verified signed entitlement indicating an unverified email see a dedicated inbox stage with resend, access refresh, password-confirmed email correction, sign-out and read-only exploration. Unknown access/network failures do not masquerade as unverified accounts; local-only and legacy deployments remain supported.
+
+New workspaces offer a skippable checklist: confirm report details in Settings, add the first site through the normal Sites form, then start an audit. Setup preferences use `audex.setup.v1.{encodedAccountId}` on this device only, independently of entitlement and audit storage. Skipping preserves progress and exposes **Resume setup** on the Audit landing page. Existing downloaded audits default to compact setup rather than an expanded welcome. Progress is derived from actual records plus explicit profile confirmation; setup storage failures are visible and never erase audits or change access.
+
+Returning users can continue their latest-created unfinished draft without a forced tour. A first-report card follows a new workspace's first finalised audit, and home-screen installation guidance appears only after a finalised audit exists. Installation is not a backup; sync and exports remain separate. Profile confirmation requires successful device persistence; account-update errors remain visible and can be retried by saving the profile again.
 
 Password and recovery protections are enforced by the server. The documented design uses BCrypt password hashes, single-use reset tokens stored as hashes, generic recovery responses and rate limits. **Do not expose server credentials in this frontend repository.**
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { REPORT_AUTHOR } from "../config";
 import { useAccountStore } from "../sync/accountStore";
 
@@ -24,11 +24,16 @@ function read(key: string): Profile {
   try { return { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem(key) ?? "{}") }; } catch { return DEFAULT_PROFILE; }
 }
 
-export function useProfile(): [Profile, (p: Profile) => void] {
+export function useProfile(): [Profile, (p: Profile) => boolean, string] {
   const { store } = useAccountStore();
   const key = `audex.profile.account.${encodeURIComponent(store.account)}`;
   const [profile, setProfile] = useState<Profile>(() => read(key));
-  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(profile)); } catch { /* storage unavailable */ } }, [profile, key]);
-  const save = useCallback((p: Profile) => setProfile(clean(p)), []);
-  return [profile, save];
+  const [error, setError] = useState("");
+  const save = useCallback((p: Profile) => {
+    const next = clean(p);
+    try { localStorage.setItem(key, JSON.stringify(next)); }
+    catch { setError("Your report profile could not be saved on this device. Keep these details and retry before closing the app."); return false; }
+    setProfile(next); setError(""); return true;
+  }, [key]);
+  return [profile, save, error];
 }
