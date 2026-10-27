@@ -1,0 +1,17 @@
+.admin-panel { display: grid; gap: 12px; }
+.admin-panel p { margin: 0; line-height: 1.5; }
+.admin-search { display: flex; align-items: end; gap: 12px; flex-wrap: wrap; }
+.admin-search .field { flex: 1; min-width: 180px; }
+.admin-users, .admin-events { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.admin-users > li, .admin-events > li { padding: 14px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 8px; }
+.admin-user-heading, .admin-actions, .admin-pagination { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.admin-user-heading { justify-content: space-between; }
+.admin-user-heading span { font-size: .85rem; color: var(--muted); }
+.admin-wrap { overflow-wrap: anywhere; }
+.admin-confirmation { padding: 16px; border: 2px solid var(--brand-ink); border-radius: 12px; }
+.admin-confirmation textarea { box-sizing: border-box; width: 100%; padding: 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; resize: vertical; }
+.admin-check { display: flex; align-items: center; gap: 10px; line-height: 1.5; }
+.admin-check input { flex-shrink: 0; }
+.admin-history { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+.admin-history h3 { margin: 0; }
+.admin-panel button:focus-visible, .admin-panel textarea:focus-visible { outline: 3px solid var(--brand-ink); outline-offset: 3px; }

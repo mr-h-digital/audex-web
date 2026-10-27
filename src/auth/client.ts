@@ -1,4 +1,5 @@
 /** Talks to the AudEx sign-in endpoints. Every message here is written for a non-technical reader. */
+import type { AccountRole, AdminChange, AdminEvent, AdminPage, AdminUser } from "../admin/types";
 
 export interface Me { id: string; username: string; displayName: string; email: string; phone: string | null }
 export interface Session { token: string; expiresAt: string; user: Me }
@@ -53,6 +54,10 @@ export function createAuthApi(base: string, f: Fetch = (u, i) => fetch(u, i), to
     forgotPassword: (identifier: string) => call<Msg>("POST", "/api/auth/forgot-password", { identifier }),
     resetPassword: (resetToken: string, password: string) => call<Msg>("POST", "/api/auth/reset-password", { token: resetToken, password }),
     me: () => call<Me>("GET", "/api/me", undefined, true),
+    adminAccess: () => call<{ role: AccountRole }>("GET", "/api/admin/access", undefined, true),
+    adminUsers: (search: string, offset: number) => call<AdminPage<AdminUser>>("GET", `/api/admin/users?${new URLSearchParams({ search, offset: String(offset), limit: "25" })}`, undefined, true),
+    adminEvents: (offset: number) => call<AdminPage<AdminEvent>>("GET", `/api/admin/events?${new URLSearchParams({ offset: String(offset), limit: "25" })}`, undefined, true),
+    adminChange: (id: string, change: AdminChange) => call<AdminUser>("PATCH", `/api/admin/users/${encodeURIComponent(id)}`, change, true),
     tour: () => call<TourPreference>("GET", "/api/me/tour", undefined, true),
     saveTour: (status: Exclude<TourStatus, "NEW">) => call<TourPreference>("PUT", "/api/me/tour", { status }, true),
     updateMe: (b: { displayName: string; email: string; phone: string; currentPassword?: string }) => call<Me>("PATCH", "/api/me", b, true),

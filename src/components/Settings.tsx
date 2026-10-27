@@ -5,6 +5,7 @@ import type { Auth } from "../auth/useAuth";
 import { AccountSection } from "./auth/AccountSection";
 import { PageHeading } from "./PageHeading";
 import { BillingPanel } from "../billing/BillingPanel";
+import { AdminPanel } from "../admin/AdminPanel";
 
 const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: "light", label: "Light", icon: "☀" },
@@ -57,6 +58,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
 
       <AccountSection auth={auth} unsynced={unsynced} />
       <BillingPanel />
+      <AdminPanel auth={auth} />
 
       <section className="card">
         <h2>About</h2>

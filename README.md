@@ -92,6 +92,16 @@ Deploy `audex-api` migration V9 and `/api/me/tour` before releasing the web tour
 
 Help remains available even when preferences cannot sync. Tours use a keyboard-accessible modal with Escape to exit, progress, Back/Next controls and highlighted workspace areas. Tours switch pages only after the user starts a guide; finish unsaved site/profile edits first. Closing a tour returns to the page from which it was started. Audit drafts remain saved.
 
+### Account administration
+
+Signed-in users can find their account role under **Settings > Account administration**. Admins and the Owner can search the paginated registered-user directory and view administrative history. Admins can suspend/restore ordinary Auditors. Only the Owner can appoint/remove Admins or manage Admin suspensions. Self-modification and Owner modification are prohibited by the API, not just hidden in the interface.
+
+Every change identifies the target user and requires a reason, an explicit confirmation checkbox and the acting administrator's current password. The password is cleared from form state on submission/cancellation and is never stored in local storage, account exports or administrative history. Directory responses do not include passwords, hashes, tokens or other users' audit records. Never enter secrets in reasons. Use HTTPS in production.
+
+Deploy `audex-api` migration V10 first and bootstrap the single Owner with an independently verified existing account UUID using `AUDEX_BOOTSTRAP_OWNER_ID` as described in its README. Account roles do not grant paid access or existing billing-administrator permissions. No user is automatically elevated based on email or billing status.
+
+Administration requires a working server connection; changes are not queued offline. Suspension and role changes revoke the target's server sessions/reset links but cannot remotely erase offline data or cancel subscriptions. Restored users must sign in again. Facility-specific checklists and standards are not changed in this release.
+
 ## Project layout
 
 | Path | Purpose |
