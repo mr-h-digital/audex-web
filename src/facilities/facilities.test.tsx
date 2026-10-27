@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
-import { auditTemplate, BASELINE_TEMPLATE, facilityTemplates, resolveTemplate, templateItemCount, type FacilityTemplate } from "./catalog";
+import { auditTemplate, BASELINE_TEMPLATE, defaultTemplateCode, facilityAreas, facilityTemplates, requiredAreaCodes, resolveTemplate, templateItemCount, type FacilityTemplate } from "./catalog";
 import { comparisonGroups, comparisonKey } from "./comparison";
-import { FacilitySelection, initialFacilitySelection } from "./FacilitySelection";
+import { FacilitySelection, initialFacilitySelection, selectionForFacility } from "./FacilitySelection";
 import { finalise, newAudit, scoreOf, summarise } from "../audits/store";
 import { sections } from "../scoring/catalog";
 import { addSite, updateSite } from "../sites/store";
@@ -37,6 +37,75 @@ describe("facility-specific audit templates", () => {
     const list = addSite([], site, "site");
     expect(list[0].facilityType).toBe("CLINIC");
     expect(updateSite(list, "site", { ...site, facilityType: "HOSPITAL" })[0].facilityType).toBe("HOSPITAL");
+  });
+
+  it.each([
+    ["CLINIC", "CLINIC_OPERATIONAL_V1", "CONSULTING", 74],
+    ["HOSPITAL", "HOSPITAL_OPERATIONAL_V1", "WARDS", 116],
+    ["RETIREMENT_VILLAGE", "RETIREMENT_OPERATIONAL_V1", "RESIDENTIAL", 81],
+  ] as const)("defaults %s to a genuinely shorter operational checklist with mandatory care areas", (type, code, area, expected) => {
+    const selection = selectionForFacility(type);
+    expect(selection).toEqual({ facilityType: type, templateCode: code, areas: [area] });
+    expect(requiredAreaCodes(String(code))).toEqual([area]);
+    const snapshot = resolveTemplate(selection.templateCode, selection.facilityType, selection.areas);
+    expect(templateItemCount(snapshot)).toBe(expected);
+    expect(templateItemCount(resolveTemplate(String(code), String(type), []))).toBe(expected);
+    expect(snapshot.purpose).toBe("OPERATIONAL");
+    const html = renderToStaticMarkup(<FacilitySelection value={selection} onChange={() => {}} />);
+    expect(html).toContain(`${expected} checks`);
+    expect(html).toContain(`${264 - Number(expected)} fewer`);
+    expect(html).toContain("(required)");
+    expect(html).toContain("disabled");
+    expect(html).toContain("not an independently reviewed or certified compliance standard");
+  });
+
+  it("adds only selected service modules, deduplicates overlaps and retains every critical check when all services apply", () => {
+    const selection = selectionForFacility("CLINIC");
+    const base = resolveTemplate(selection.templateCode, selection.facilityType, selection.areas);
+    const kitchen = resolveTemplate(selection.templateCode, selection.facilityType, [...selection.areas, "KITCHEN"]);
+    expect(templateItemCount(kitchen)).toBe(83);
+    expect(base.sections.some((section) => section.code === "ward-hygiene")).toBe(false);
+    const baseKeys = base.sections.flatMap((section) => section.items.map((item) => item.key));
+    for (const key of ["chemicals-chemical-storage-02", "cleaning-equipment-trolley-11", "bathroom-toilet-cleaning-procedure-05", "waste-disposal-05"]) expect(baseKeys).toContain(key);
+    for (const type of ["HOSPITAL", "CLINIC", "RETIREMENT_VILLAGE"]) {
+      const code = defaultTemplateCode(type);
+      const mandatory = resolveTemplate(code, type).sections.flatMap((section) => section.items.map((item) => item.key));
+      for (const area of facilityAreas) {
+        const selected = resolveTemplate(code, type, [area.code]);
+        const selectedKeys = selected.sections.flatMap((section) => section.items.map((item) => item.key));
+        expect(new Set(selectedKeys).size).toBe(selectedKeys.length);
+        for (const key of mandatory) expect(selectedKeys).toContain(key);
+      }
+      const all = resolveTemplate(code, type, facilityAreas.map((area) => area.code));
+      expect(templateItemCount(all)).toBe(200);
+      const included = new Set(all.sections.flatMap((section) => section.items.map((item) => item.key)));
+      for (const section of sections) for (const item of section.items) if (item.severity === "CRITICAL") expect(included.has(item.key)).toBe(true);
+    }
+    expect(selectionForFacility("OTHER").templateCode).toBe(BASELINE_TEMPLATE);
+    expect(selectionForFacility("unknown")).toEqual(initialFacilitySelection);
+    const unspecified = renderToStaticMarkup(<FacilitySelection value={initialFacilitySelection} onChange={() => {}} />);
+    expect(unspecified).not.toContain('value="CLINIC_OPERATIONAL_V1"');
+    expect(unspecified).not.toContain('value="HOSPITAL_OPERATIONAL_V1"');
+    expect(unspecified).not.toContain('value="RETIREMENT_OPERATIONAL_V1"');
+  });
+
+  it("scores and freezes the real reduced checklist without rewriting historical baseline audits", () => {
+    const selection = selectionForFacility("CLINIC");
+    const audit = newAudit("short", site, "2026-10-27", "WPC_V1", undefined, selection);
+    expect(scoreOf(audit).unanswered).toBe(74);
+    for (const section of auditTemplate(audit).sections) for (const item of section.items) audit.answers[item.key] = "COMPLIANT";
+    const done = finalise(audit, "2026-10-27T12:00:00Z");
+    expect(done.state).toBe("final");
+    expect(done.summary?.templateCode).toBe("CLINIC_OPERATIONAL_V1");
+    expect(scoreOf(done).percent).toBe(100);
+    const failed = { ...audit, answers: { ...audit.answers, "waste-disposal-05": "NON_COMPLIANT" as const } };
+    expect(scoreOf(failed).status).toBe("NON_COMPLIANT");
+    const definition = facilityTemplates.find((template) => template.code === selection.templateCode)!;
+    definition.coreItemKeys = []; definition.modules = []; definition.status = "DRAFT";
+    expect(templateItemCount(auditTemplate(done))).toBe(74);
+    expect(scoreOf(done).status).toBe("COMPLIANT");
+    expect(scoreOf(newAudit("baseline", site, "2026-10-27", "WPC_V1")).unanswered).toBe(264);
+    expect(comparisonKey(summarise(done))).not.toBe(comparisonKey(summarise(newAudit("full", site, "2026-10-27", "WPC_V1"))));
   });
 
   it("freezes checklist and context at creation, with legacy audits using the original baseline", () => {

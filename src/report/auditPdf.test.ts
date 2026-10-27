@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { finalise, newAudit } from "../audits/store";
 import { sections } from "../scoring/catalog";
+import { selectionForFacility } from "../facilities/FacilitySelection";
 import { auditFilename, buildAuditReport, downloadAuditReport } from "./auditPdf";
 
 describe("audit PDF", () => {
@@ -21,6 +22,15 @@ describe("audit PDF", () => {
     expect(out).toContain("WPC housekeeping baseline");
     expect(out).toContain("Facility: Clinic");
     expect(out).toContain("Consulting rooms");
+  });
+  it("labels the real reduced operational checklist and does not report omitted sections", async () => {
+    const scoped = newAudit("short", { id: "s1", name: "Clinic", unitManager: "", supervisor: "" }, "2026-10-15", "WPC_V1", undefined, selectionForFacility("CLINIC"));
+    const out = String((await buildAuditReport({ ...scoped, answers: a.answers })).output());
+    expect(out).toContain("Clinic operational housekeeping");
+    expect(out).toContain("not an independently");
+    expect(out).toContain("compliance standard");
+    expect(out).not.toContain("Laundry Equipment");
+    expect(out).not.toContain("Ward Hygiene");
   });
   it("refuses to silently omit a photo that is unavailable offline", async () => {
     vi.stubGlobal("fetch", async () => { throw new Error("offline"); });

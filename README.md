@@ -104,17 +104,25 @@ Administration requires a working server connection; changes are not queued offl
 
 ### Facility types, audit scope and standards
 
-Use **Sites > Facility type** to classify a hospital, clinic, retirement village or other facility. Before starting an audit, confirm the facility type, record its areas/services, select a published **Audit standard**, and open **Preview checklist** to see its requirements. Areas are selected per audit to account for facilities with services not implied by their type.
+Use **Sites > Facility type** to classify a hospital, clinic, retirement village or other facility. Selecting a classified site or changing facility type before an audit now defaults to its shorter operational checklist. Confirm all areas/services present, choose a **Checklist / audit standard**, and open **Preview checklist** to see its requirements. Areas are selected per audit to account for facilities with services not implied by their type.
 
-**The only published template is currently the full WPC housekeeping baseline (264 checks).** Choosing a facility type or area does not yet remove any baseline checks. The selection screen explains this and lists the relevant hospital/clinic/retirement-village drafts as awaiting approval; draft standards cannot be selected. No compliance mappings have been invented. Continue to follow your organisation's guidance on genuine N/A answers until an appropriate standard is approved.
+| Default operational checklist | Starting checks | Mandatory area |
+| --- | ---: | --- |
+| Clinic | 74 | Consulting rooms |
+| Hospital | 116 | Patient wards |
+| Retirement village | 81 | Residential rooms |
 
-Once approved mappings are published through a reviewed release, the resolver includes mandatory core requirements and required modules plus selected optional area modules. Scoring, progress, N/A requirements and PDF findings use the audit's own checklist, not every item in the global catalogue. The template and facility/area context are copied into an immutable audit snapshot at creation; changing a site affects future selection defaults, not existing drafts or finalised records. To change the scope, start a new draft rather than switching standards mid-audit.
+The form shows the live check count and reduction from the full 264-check baseline. Core safety checks and the mandatory primary-area module cannot be removed. Select every additional service present: kitchens, laundry, emergency care, isolation, wards, residential rooms, frail care, shared areas, baths/showers and sluice/bedpan decontamination. Each adds only its mapped checks; overlaps appear once. For example, a clinic with a kitchen has 83 checks. All services together contain 200 unique checks. **These are reduced operational housekeeping reviews, not independently reviewed or certified compliance standards.** The notice appears before starting, in the frozen audit context and in PDFs. The shorter scope omits detailed/repeated low-risk requirements as well as unselected services; excluded checks are not a pass or evidence of whole-facility compliance.
+
+**The full WPC housekeeping baseline remains available (264 checks)** in the checklist selector, and remains the default for unspecified/other facilities. Area selections do not reduce that baseline. The separate hospital/clinic/retirement-village compliance standards remain drafts pending qualified review and cannot be selected. Follow organisational policy and use the full baseline where required; genuine N/A answers still require reasons.
+
+The resolver includes mandatory core requirements and required modules plus selected optional area modules. Scoring, progress, N/A requirements and PDF findings use the audit's own checklist, not every item in the global catalogue. The template, purpose and facility/area context are copied into an immutable audit snapshot at creation; changing a site affects future selection defaults, not existing drafts or finalised records. Existing 264-check drafts are deliberately not shortened in place: start a new draft to use a reduced checklist.
 
 Existing drafts and finalised audits without a snapshot keep the original full WPC baseline. Synced audits download the server's frozen snapshot. Reports include standard name/version, facility and area context and the template notice. Dashboard averages/training comparisons are restricted to one comparable template, scoring rule set and area scope at a time; the exported report identifies that group.
 
 Deploy `audex-api` migration V11 before this frontend. `shared/facility-templates.json`, `shared/template.json` and rule sets must match the API. The server independently resolves the selected standard and rejects unpublished templates, forged/reduced snapshots and answers outside scope. Snapshot/version mismatches are surfaced as sync conflicts; the original local audit remains intact.
 
-To publish a facility-specific standard, obtain the approved applicability matrix, sources, core item list, mandatory and optional area modules, scoring review and approval details. Follow the API README's publication procedure and release a new immutable template version. Until then, the reduced facility-specific checklists remain deliberately unavailable.
+To publish a certified/approved facility-specific standard, obtain the approved applicability matrix, sources, core item list, mandatory and optional area modules, scoring review and approval details. Follow the API README's publication procedure and release a new immutable template version. Operational checklists have distinct codes and `purpose: "OPERATIONAL"`; they do not carry invented approver details. Always deploy the matching API catalogue before the frontend. This operational release needs no migration beyond V11.
 
 ## Project layout
 

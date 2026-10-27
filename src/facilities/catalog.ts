@@ -9,12 +9,21 @@ export interface FacilityTemplate {
   scope: "BASELINE" | "MAPPED"; coreItemKeys: string[];
   modules: { area: string; required: boolean; itemKeys: string[] }[]; notice: string;
   approvedBy?: string; approvedAt?: string; approvalReference?: string;
+  purpose?: "OPERATIONAL";
 }
 export interface TemplateSnapshot {
   code: string; name: string; version: number; facilityType: string | null; facilityName: string;
   notice: string; areas: { code: string; name: string }[]; sections: TemplateSection[];
+  purpose?: "OPERATIONAL";
 }
 export const facilityTemplates = catalog.templates as FacilityTemplate[];
+
+export function defaultTemplateCode(facilityType: string | null): string {
+  return facilityTemplates.find((template) => template.status === "PUBLISHED" && template.purpose === "OPERATIONAL" && facilityType !== null && template.facilityTypes.includes(facilityType))?.code ?? BASELINE_TEMPLATE;
+}
+export function requiredAreaCodes(code: string): string[] {
+  return facilityTemplates.find((template) => template.code === code)?.modules.filter((module) => module.required).map((module) => module.area) ?? [];
+}
 
 export function resolveTemplate(code = BASELINE_TEMPLATE, facilityType: string | null = null, areas: string[] = []): TemplateSnapshot {
   const definition = facilityTemplates.find((template) => template.code === code);
@@ -24,7 +33,10 @@ export function resolveTemplate(code = BASELINE_TEMPLATE, facilityType: string |
   if (definition.modules.some((module) => !facilityAreas.some((area) => area.code === module.area))) throw new Error("This template refers to an unknown facility area.");
   if (facilityType !== null && !definition.facilityTypes.includes(facilityType)) throw new Error("This template is not approved for the selected facility type.");
   if (new Set(areas).size !== areas.length || areas.some((area) => !facilityAreas.some((item) => item.code === area))) throw new Error("Choose distinct areas from the facility area catalogue.");
-  if (definition.scope === "MAPPED" && (!facilityType || !definition.coreItemKeys.length || !definition.approvedBy || !definition.approvedAt || !definition.approvalReference)) throw new Error("This template needs approved core requirements and approval metadata.");
+  if (definition.purpose !== undefined && definition.purpose !== "OPERATIONAL") throw new Error("This template has an unknown purpose.");
+  if (definition.purpose === "OPERATIONAL" && (definition.scope !== "MAPPED" || !definition.notice.trim())) throw new Error("Operational templates require a separate mapped checklist and a scope notice.");
+  if (definition.scope === "MAPPED" && (!facilityType || !definition.coreItemKeys.length)) throw new Error("This template needs a facility type and mandatory core requirements.");
+  if (definition.scope === "MAPPED" && definition.purpose !== "OPERATIONAL" && (!definition.approvedBy?.trim() || !definition.approvedAt?.trim() || !definition.approvalReference?.trim())) throw new Error("This compliance template needs approval metadata.");
   const keys = new Set([...definition.coreItemKeys, ...definition.modules.filter((module) => module.required || areas.includes(module.area)).flatMap((module) => module.itemKeys)]);
   const known = new Set(sections.flatMap((section) => section.items.map((item) => item.key)));
   if ([...definition.coreItemKeys, ...definition.modules.flatMap((module) => module.itemKeys)].some((key) => !known.has(key))) throw new Error("This template refers to an unknown checklist requirement.");
@@ -35,6 +47,7 @@ export function resolveTemplate(code = BASELINE_TEMPLATE, facilityType: string |
     facilityType, facilityName: facilityTypes.find((type) => type.code === facilityType)?.name ?? "Not recorded",
     notice: definition.notice, areas: facilityAreas.filter((area) => areas.includes(area.code)).sort((a, b) => a.code.localeCompare(b.code)).map((area) => ({ ...area })),
     sections: structuredClone(included),
+    ...(definition.purpose === "OPERATIONAL" ? { purpose: "OPERATIONAL" as const } : {}),
   };
 }
 

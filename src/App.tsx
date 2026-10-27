@@ -17,8 +17,8 @@ import { PhotoAccess, usePhotoLoader } from "./photos/PhotoAccess";
 import { ScorePanel } from "./components/ScorePanel";
 import { Sites } from "./components/Sites";
 import { activeRuleSetCode, ruleSet, ruleSets } from "./scoring/catalog";
-import { auditTemplate, facilityTypes, templateItemCount } from "./facilities/catalog";
-import { FacilitySelection, initialFacilitySelection, type FacilitySelectionValue } from "./facilities/FacilitySelection";
+import { auditTemplate, templateItemCount } from "./facilities/catalog";
+import { FacilitySelection, initialFacilitySelection, selectionForFacility, type FacilitySelectionValue } from "./facilities/FacilitySelection";
 import type { Result } from "./scoring/types";
 import { useSites } from "./sites/store";
 import { API_URL, pending } from "./sync/sync";
@@ -196,7 +196,7 @@ function Main({ auth }: { auth: Auth }) {
                 <label className="field">Site<select value={siteId} onChange={(e) => {
                   setSiteId(e.target.value);
                   const type = active.find((site) => site.id === e.target.value)?.facilityType;
-                  setFacilitySelection({ ...initialFacilitySelection, facilityType: facilityTypes.find((item) => item.code === type)?.code ?? null });
+                  setFacilitySelection(selectionForFacility(type));
                 }}>
                   <option value="">Choose a site…</option>{active.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>
                 <label className="field">Audit date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
