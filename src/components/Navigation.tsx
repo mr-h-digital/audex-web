@@ -12,7 +12,7 @@ export function Navigation({ page, onNavigate }: { page: Page; onNavigate: (page
     <nav className="tabbar" aria-label="Main">
       <span className="tabbar__heading">Workspace</span>
       {ITEMS.map(({ id, label, path }) => (
-        <button key={id} className={id === "settings" ? "tabbar__settings" : undefined} type="button"
+        <button key={id} data-tour={`nav-${id}`} className={id === "settings" ? "tabbar__settings" : undefined} type="button"
           aria-current={page === id ? "page" : undefined} onClick={() => onNavigate(id)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d={path} />

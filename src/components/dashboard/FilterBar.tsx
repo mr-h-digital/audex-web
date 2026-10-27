@@ -11,7 +11,7 @@ interface Props {
 /** One filter row above all the charts: period, custom range, site, and the report download. */
 export function FilterBar(p: Props) {
   return (
-    <div className="filters">
+    <div className="filters" data-tour="dashboard-filters">
       <div className="chips" role="group" aria-label="Period">
         {PRESETS.map((x) => (
           <button key={x.id} type="button" className="chip" aria-pressed={p.preset === x.id} onClick={() => p.onPreset(x.id)}>{x.label}</button>

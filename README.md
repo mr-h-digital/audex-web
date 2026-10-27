@@ -68,6 +68,13 @@ Restart the dev server after changing environment variables. Keep real secrets o
 - **PDF reports:** create reports on-device, including audit details, profile information and photos.
 - **Installable PWA:** cache the app for offline launch and add it to a device home screen.
 - **Optional accounts and sync:** connect to `audex-api` for sign-in, account management and audit uploads.
+- **Optional guided tours:** a first-visit welcome introduces sites, audits, reporting, sync and settings. Choose **Explore on my own** to dismiss it, or use **Help** in the header to replay the introduction or select a focused feature guide at any time. Tours never create or change audit records.
+
+### Guided-tour preferences
+
+Deploy `audex-api` migration V9 and `/api/me/tour` before releasing the web tour. Dismissal and completion are stored per signed-in user and cached per account on the device; offline choices retry on reconnection. Preference errors are shown with a retry action rather than blocking the workspace. Without an API, the preference is device-local. A new device waits for the account preference before showing the welcome. Existing users without a preference are also offered the introduction once. Automatic prompting waits until the Audit page is idle and no audit is open.
+
+Help remains available even when preferences cannot sync. Tours use a keyboard-accessible modal with Escape to exit, progress, Back/Next controls and highlighted workspace areas. Tours switch pages only after the user starts a guide; finish unsaved site/profile edits first. Closing a tour returns to the page from which it was started. Audit drafts remain saved.
 
 ## Project layout
 

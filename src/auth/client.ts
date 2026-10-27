@@ -2,6 +2,8 @@
 
 export interface Me { id: string; username: string; displayName: string; email: string; phone: string | null }
 export interface Session { token: string; expiresAt: string; user: Me }
+export type TourStatus = "NEW" | "SKIPPED" | "COMPLETED";
+export interface TourPreference { status: TourStatus }
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -49,6 +51,8 @@ export function createAuthApi(base: string, f: Fetch = (u, i) => fetch(u, i), to
     forgotPassword: (identifier: string) => call<Msg>("POST", "/api/auth/forgot-password", { identifier }),
     resetPassword: (resetToken: string, password: string) => call<Msg>("POST", "/api/auth/reset-password", { token: resetToken, password }),
     me: () => call<Me>("GET", "/api/me", undefined, true),
+    tour: () => call<TourPreference>("GET", "/api/me/tour", undefined, true),
+    saveTour: (status: Exclude<TourStatus, "NEW">) => call<TourPreference>("PUT", "/api/me/tour", { status }, true),
     updateMe: (b: { displayName: string; email: string; phone: string; currentPassword?: string }) => call<Me>("PATCH", "/api/me", b, true),
     changePassword: (currentPassword: string, newPassword: string) => call<null>("POST", "/api/me/password", { currentPassword, newPassword }, true),
   };

@@ -31,7 +31,7 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
   return (
     <div className="dash sites-page">
       <PageHeading title="Sites" description="Manage your facilities, archived sites and training sessions." />
-      <form className="card form" onSubmit={submit}>
+      <form className="card form" data-tour="site-form" onSubmit={submit}>
         <h2>{editing ? "Edit site" : "Add a site"}</h2>
         {field("name", "Site name (e.g. clinic, hospital or village)", true)}
         {field("address", "Address")}
@@ -43,7 +43,7 @@ export function Sites({ training, onAddTraining, onRemoveTraining, sites, onAdd,
           {editing && <button className="btn btn--ghost" type="button" onClick={() => { setEditing(null); setDraft(EMPTY); }}>Cancel</button>}
         </div>
       </form>
-      <section className="card">
+      <section className="card" data-tour="site-list">
         <div className="card__head"><h2>Your sites</h2>
           <label className="small"><input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived</label></div>
         {shown.length === 0 ? <p className="empty">No sites yet. Add the first one above.</p> : (
@@ -67,7 +67,7 @@ function TrainingLog({ sites, all, training, onAdd, onRemove }: { sites: AuditSi
   const [d, setD] = useS<TrainingDraft>({ siteId: "", date: new Date().toISOString().slice(0, 10), topic: "" });
   const name = (id: string) => all.find((x) => x.id === id)?.name ?? "Unknown site";
   return (
-    <section className="card form">
+    <section className="card form" data-tour="training">
       <h2>Training sessions</h2>
       <p className="small">Log each training session so the dashboard can show whether scores improve afterwards.</p>
       <form className="form" onSubmit={(e) => { e.preventDefault(); if (d.siteId && d.topic.trim()) { onAdd(d); setD({ ...d, topic: "" }); } }}>

@@ -41,7 +41,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
         </div>
       </section>
 
-      <form className="card form" onSubmit={(e) => { e.preventDefault(); if (!error) { onSaveProfile(draft); setSaved(true); } }}>
+      <form className="card form" data-tour="settings-profile" onSubmit={(e) => { e.preventDefault(); if (!error) { onSaveProfile(draft); setSaved(true); } }}>
         <h2>Your profile</h2>
         <p className="small">Your name and job title are printed on every report you download.</p>
         {field("name", "Full name")}

@@ -28,6 +28,7 @@ import { AuthGate } from "./components/auth/AuthGate";
 import type { Auth } from "./auth/useAuth";
 import { Navigation, type Page } from "./components/Navigation";
 import { PageHeading } from "./components/PageHeading";
+import { GuidedTours } from "./tour/GuidedTours";
 
 const RESULTS: { value: Result; label: string; icon: string; cls: string }[] = [
   { value: "COMPLIANT", label: "Compliant", icon: "✓", cls: "c" },
@@ -122,6 +123,7 @@ function Main({ auth }: { auth: Auth }) {
   return (
     <PhotoAccess.Provider value={loadPhoto}><main className="app">
       <BrandHeader>
+        <GuidedTours auth={auth} page={tab} onNavigate={setTab} busy={!!current || syncing} />
         {current && tab === "audit" && <span className="syncbadge">{saveLabel(current)}</span>}
         <button type="button" className="gear" aria-label="Settings" aria-current={tab === "settings" ? "page" : undefined} onClick={() => setTab("settings")}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -131,7 +133,7 @@ function Main({ auth }: { auth: Auth }) {
         </button>
       </BrandHeader>
       {!online && <p className="offline" role="status">You are offline. That is fine: keep working and everything is saved on this phone.</p>}
-      {API_URL && <p className="small" role="status">{syncing ? "Syncing your account…" : lastSync ? `Last synced ${lastSync}` : "Records are saved offline for this account."}{" "}
+      {API_URL && <p className="small" role="status" data-tour="sync">{syncing ? "Syncing your account…" : lastSync ? `Last synced ${lastSync}` : "Records are saved offline for this account."}{" "}
         <button type="button" className="chip" disabled={syncing || !online} onClick={() => void runSync()}>Sync now</button></p>}
       {(syncError || store.error) && <p className="warn" role="alert">{store.error || syncError} <button type="button" className="chip" onClick={() => void runSync()}>Retry</button></p>}
       {hasLegacyRecords() && <p className="banner">Older device records are unassigned and have not been synced to this account.{" "}
@@ -143,7 +145,7 @@ function Main({ auth }: { auth: Auth }) {
 
       <Navigation page={tab} onNavigate={setTab} />
 
-      <section className="app-content">
+      <section className="app-content" data-tour={tab}>
         {tab === "audit" && <PageHeading title="Audit" description="Start a housekeeping audit or continue a saved audit." />}
         {tab === "dashboard" && <Dashboard real={real} author={{ name: profile.name, role: roleLine(profile) }} />}
         {tab === "settings" && <Settings profile={profile} onSaveProfile={onSaveProfile} theme={theme} onTheme={setTheme} auth={auth} unsynced={queued} />}
@@ -152,7 +154,7 @@ function Main({ auth }: { auth: Auth }) {
         {tab === "audit" && (current
           ? <AuditScreen audit={current} onChange={save} onClose={() => setOpenId(null)} />
           : <div className="start-page">
-            <section className="card startaudit">
+            <section className="card startaudit" data-tour="audit-start">
               <h2>Start an audit</h2>
               {active.length === 0 ? <><p className="empty">Add the site you are auditing first.</p>
                 <button type="button" className="btn" onClick={() => setTab("sites")}>Add a site</button></> : <>
@@ -239,7 +241,7 @@ function AuditScreen({ audit, onChange, onClose }: { audit: SavedAudit; onChange
 
   return (
     <div className="audit-page">
-      <p className="auditing"><span><strong>{audit.siteName}</strong><br />{fmtDate(audit.date)}</span>
+      <p className="auditing" data-tour="audit-start"><span><strong>{audit.siteName}</strong><br />{fmtDate(audit.date)}</span>
         <button type="button" className="chip" onClick={onClose}>Back to audits</button></p>
       <ScorePanel score={score} rules={rules} answered={TOTAL_ITEMS - score.unanswered} total={TOTAL_ITEMS} />
       {locked && <p className="banner banner--ok">This audit is finalised and saved. Answers can no longer be changed.</p>}
