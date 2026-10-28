@@ -4,6 +4,7 @@ import App from "./App";
 import "./brand.css";
 import "./styles.css";
 import "./onboarding.css";
+import "./workspace.css";
 import { registerSW } from "virtual:pwa-register";
 
 // Ask the browser not to clear saved audits when storage runs low, and cache the app so it opens with no signal.

@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import type { Auth } from "../../auth/useAuth";
 import { newPasswordProblem } from "../../auth/password";
 import { Hints, PasswordField, useAction } from "./AuthGate";
+import { ConfirmDialog } from "../ConfirmDialog";
+import { useNavigationGuard } from "../UnsavedChanges";
 
 type Panel = null | "password" | "email" | "signout" | "signout-all";
 
@@ -9,6 +11,7 @@ type Panel = null | "password" | "email" | "signout" | "signout-all";
 export function AccountSection({ auth, unsynced }: { auth: Auth; unsynced: number }) {
   const [panel, setPanel] = useState<Panel>(null);
   const [done, setDone] = useState("");
+  const guard = useNavigationGuard();
   const close = (msg = "") => { setPanel(null); setDone(msg); };
 
   if (!auth.enabled || !auth.user) {
@@ -16,7 +19,7 @@ export function AccountSection({ auth, unsynced }: { auth: Auth; unsynced: numbe
       <section className="card">
         <h2>Account</h2>
         <div className="setrow"><div>Sign-in<small>Not needed yet. Sign-in switches on when the app is connected to its server.</small></div></div>
-        <div className="setrow"><div>Where your data is kept<small>On this phone only.</small></div></div>
+        <div className="setrow"><div>Where your data is kept<small>On this device only.</small></div></div>
       </section>
     );
   }
@@ -25,7 +28,7 @@ export function AccountSection({ auth, unsynced }: { auth: Auth; unsynced: numbe
     <section className="card">
       <h2>Account</h2>
       <div className="setrow"><div>Signed in as {u.displayName}<small>Username: {u.username} · {u.email}</small></div></div>
-      <div className="setrow"><div>Where your data is kept<small>On this phone. Finished audits upload to the server whenever you have a connection.</small></div></div>
+      <div className="setrow"><div>Where your data is kept<small>Drafts stay on this device only. Finalised audits can upload to your account when connected and entitled. Check upload status before relying on another device.</small></div></div>
       {done && <p className="saved" role="status">{done}</p>}
       <div className="actions">
         <button type="button" className="btn btn--ghost" aria-expanded={panel === "password"} onClick={() => { setDone(""); setPanel(panel === "password" ? null : "password"); }}>Change password</button>
@@ -34,19 +37,19 @@ export function AccountSection({ auth, unsynced }: { auth: Auth; unsynced: numbe
       {panel === "password" && <ChangePassword auth={auth} onDone={close} />}
       {panel === "email" && <ChangeEmail auth={auth} onDone={close} />}
       <div className="actions">
-        <button type="button" className="btn btn--ghost" onClick={() => { setDone(""); setPanel("signout"); }}>Sign out</button>
-        <button type="button" className="btn btn--ghost" onClick={() => { setDone(""); setPanel("signout-all"); }}>Sign out everywhere</button>
+        <button type="button" className="btn btn--ghost" onClick={() => guard(() => { setDone(""); setPanel("signout"); })}>Sign out</button>
+        <button type="button" className="btn btn--ghost" onClick={() => guard(() => { setDone(""); setPanel("signout-all"); })}>Sign out everywhere</button>
       </div>
       {panel === "signout" && (
         <Confirm busyLabel="Signing out…" yes="Sign out" onCancel={() => close()} onYes={() => auth.signOut()}>
           {unsynced > 0
-            ? <>{unsynced} finished audit{unsynced === 1 ? " has" : "s have"} not uploaded yet. {unsynced === 1 ? "It stays" : "They stay"} safe on this phone and will upload the next time you sign in. Sign out now?</>
-            : <>Sign out of AudEx on this phone? Your audits stay on the phone.</>}
+            ? <>{unsynced} finalised audit{unsynced === 1 ? " has" : "s have"} not uploaded yet. Downloaded records remain on this device; upload requires signing in again with a connection and editing access. Sign out now?</>
+            : <>Your downloaded records remain on this device. Drafts are not backed up online.</>}
         </Confirm>)}
       {panel === "signout-all" && (
         <Confirm busyLabel="Signing out…" yes="Sign out everywhere" onCancel={() => close()} onYes={() => auth.signOutEverywhere()}>
-          This signs you out on every phone and computer, including this one. Use it if a phone is lost. Audits stay on each phone and upload once you sign in again.
-          {unsynced > 0 && <> {unsynced} audit{unsynced === 1 ? " has" : "s have"} not uploaded from this phone yet.</>}
+          This signs you out on every device, including this one. Use it if a device is lost. Downloaded audits stay on each device; finalised audits can upload after signing in when connected and entitled.
+          {unsynced > 0 && <> {unsynced} audit{unsynced === 1 ? " has" : "s have"} not uploaded from this device yet.</>}
         </Confirm>)}
     </section>
   );
@@ -55,14 +58,14 @@ export function AccountSection({ auth, unsynced }: { auth: Auth; unsynced: numbe
 function Confirm({ children, yes, busyLabel, onYes, onCancel }: { children: React.ReactNode; yes: string; busyLabel: string; onYes: () => Promise<void>; onCancel: () => void }) {
   const { busy, error, run } = useAction();
   return (
-    <div className="confirm" role="alertdialog" aria-label="Please confirm">
+    <ConfirmDialog title={yes === "Sign out" ? "Sign out of this device?" : "Sign out of every device?"} onCancel={() => { if (!busy) onCancel(); }}>
       <p>{children}</p>
       {error && <p className="warn" role="alert">{error}</p>}
       <div className="actions">
+        <button type="button" className="btn btn--ghost" autoFocus disabled={busy} onClick={onCancel}>Keep working</button>
         <button type="button" className="btn" disabled={busy} onClick={() => void run(onYes)}>{busy ? busyLabel : yes}</button>
-        <button type="button" className="btn btn--ghost" disabled={busy} onClick={onCancel}>Cancel</button>
       </div>
-    </div>
+    </ConfirmDialog>
   );
 }
 

@@ -5,12 +5,14 @@ import type { Page } from "../components/Navigation";
 import { TOURS, type TourId } from "./catalog";
 import { useTourPreference } from "./useTourPreference";
 import "./tour.css";
+import { useNavigationGuard } from "../components/UnsavedChanges";
 
 interface Props { auth: Auth; page: Page; onNavigate: (page: Page) => void; busy: boolean }
 type View = { kind: "welcome" } | { kind: "help" } | { kind: "tour"; id: TourId; index: number } | { kind: "done" } | null;
 
 export function GuidedTours({ auth, page, onNavigate, busy }: Props) {
   const preference = useTourPreference(auth);
+  const guard = useNavigationGuard();
   const [view, setView] = useState<View>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -81,9 +83,11 @@ export function GuidedTours({ auth, page, onNavigate, busy }: Props) {
     setView(null);
   };
   const start = (id: TourId) => {
-    automatic.current = true;
-    returnPage.current = page;
-    setView({ kind: "tour", id, index: 0 });
+    guard(() => {
+      automatic.current = true;
+      returnPage.current = page;
+      setView({ kind: "tour", id, index: 0 });
+    });
   };
   const finish = () => {
     if (view?.kind === "tour" && view.id === "intro") preference.save("COMPLETED");

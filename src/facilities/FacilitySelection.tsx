@@ -17,24 +17,28 @@ export function FacilitySelection({ value, onChange }: { value: FacilitySelectio
   const count = templateItemCount(snapshot);
   const baselineCount = templateItemCount(resolveTemplate());
   return <section className="facility-selection" aria-labelledby="facility-selection-title">
-    <h3 id="facility-selection-title">Choose your audit scope</h3>
+    <h3 id="facility-selection-title" className="step-title"><span>2</span> What will you inspect?</h3>
+    <p className="small">Choose your audit scope. The facility type suggests a checklist; include every additional service present.</p>
     <label className="field">Facility type<select value={value.facilityType ?? ""} onChange={(e) => onChange(selectionForFacility(e.target.value))}>
       <option value="">Not specified — full baseline checklist</option>
       {facilityTypes.map((type) => <option key={type.code} value={type.code}>{type.name}</option>)}
     </select></label>
-    <label className="field">Checklist / audit standard<select value={value.templateCode} onChange={(e) => onChange({ ...value, templateCode: e.target.value, areas: [...new Set([...value.areas, ...requiredAreaCodes(e.target.value)])] })}>
+    <label className="field">Checklist<select value={value.templateCode} onChange={(e) => onChange({ ...value, templateCode: e.target.value, areas: [...new Set([...value.areas, ...requiredAreaCodes(e.target.value)])] })}>
       {applicable.filter((template) => template.status === "PUBLISHED").map((template) => <option key={template.code} value={template.code}>{template.name} · v{template.version}</option>)}
     </select></label>
-    <p className="banner banner--ok" role="status"><strong>{count} checks</strong>{mapped ? ` — ${baselineCount - count} fewer than the full ${baselineCount}-check baseline.` : " — full baseline."}</p>
-    <details open={mapped}>
-      <summary>Record areas and services ({value.areas.length} selected)</summary>
+    <p className="selection-guidance">{operational ? `Suggested for ${snapshot.facilityName.toLowerCase()}: a shorter operational housekeeping review. Choose the full baseline if your organisation requires the comprehensive checklist.` : "Full baseline: the comprehensive original checklist. Area selections record context but do not shorten it."}</p>
+    <p className="scope-count" role="status"><strong>{count} checks</strong>{mapped ? ` — ${baselineCount - count} fewer than the full ${baselineCount}-check baseline.` : " — full baseline."}</p>
+    <section aria-labelledby="facility-services-title">
+      <h4 id="facility-services-title">Areas and services ({value.areas.length} selected)</h4>
       <p className="small">{mapped ? `Select every additional area/service present. Required areas and core safety checks cannot be removed. The count updates immediately; overlapping checks appear only once.${operational ? " This is a reduced operational review, not certification of the whole facility." : ""}` : "These selections record context only for the full baseline; they do not remove checks."}</p>
-      <div className="facility-areas" role="group" aria-label="Facility areas and services">{facilityAreas.map((area) => <label key={area.code}>
-        <input type="checkbox" checked={required.includes(area.code) || value.areas.includes(area.code)} disabled={required.includes(area.code)} onChange={(e) => onChange({ ...value, areas: e.target.checked ? [...value.areas, area.code] : value.areas.filter((code) => code !== area.code) })} />{area.name}{required.includes(area.code) ? " (required)" : ""}
+      {mapped && <p className="small">Core safety checks are always included. Required areas are selected and locked below.</p>}
+      <div className="facility-areas" role="group" aria-label="Facility areas and services">{facilityAreas.map((area) => <label key={area.code} className={required.includes(area.code) || value.areas.includes(area.code) ? "area-selected" : ""}>
+        <input type="checkbox" checked={required.includes(area.code) || value.areas.includes(area.code)} disabled={required.includes(area.code)} onChange={(e) => onChange({ ...value, areas: e.target.checked ? [...value.areas, area.code] : value.areas.filter((code) => code !== area.code) })} /><span>{area.name}<small>{required.includes(area.code) ? "Included automatically (required)" : mapped ? "Select if present" : "Context only"}</small></span>
       </label>)}</div>
-    </details>
-    <p className="banner" role="status">{snapshot.notice}</p>
-    <p className="small">AudEx is independent software by Mr. H Digital, not restricted to one business. WPC labels identify the existing source methodology; operational checklists are subsets of that material, not industry-wide compliance standards. Confirm the checklist's suitability and your organisation's requirements before starting.</p>
+    </section>
+    <p className="scope-notice">{snapshot.notice}</p>
+    <details><summary>About this checklist & suitability</summary>
+    <p className="small">AudEx is independent software by Mr. H Digital, not restricted to one business. WPC labels identify the existing source methodology; operational checklists are subsets of that material, not industry-wide compliance standards. Confirm the checklist's suitability and your organisation's requirements before starting.</p></details>
     <details>
       <summary>Preview checklist — {templateItemCount(snapshot)} checks</summary>
       <p className="small">The selected template and facility context are frozen when you start. Changing the site later does not rewrite this audit.</p>

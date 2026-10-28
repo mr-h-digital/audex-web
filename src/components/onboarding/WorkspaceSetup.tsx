@@ -32,6 +32,7 @@ export function WorkspaceSetup({ name, progress, hasSites, hasAudit, writable, o
   name: string; progress: SetupProgress; hasSites: boolean; hasAudit: boolean; writable: boolean;
   onUpdate: (patch: Partial<SetupProgress>) => void; onNavigate: (page: Page) => void;
 }) {
+  const [expanded, setExpanded] = useState(!hasSites && !hasAudit);
   const steps = [
     { title: "Make your reports yours", detail: "Confirm your name and report details in Settings, then save your profile.", done: progress.profileConfirmed, page: "settings" as const, action: "Review report details" },
     { title: "Give your first site a home", detail: "Add the clinic, hospital or facility you audit. One site is one whole facility.", done: hasSites, page: "sites" as const, action: "Add your first site" },
@@ -40,8 +41,8 @@ export function WorkspaceSetup({ name, progress, hasSites, hasAudit, writable, o
   const complete = steps.filter((s) => s.done).length;
   if (complete === steps.length) return null;
   if (progress.skipped) return <div className="setup-resume"><span className="small">Your workspace, at your pace. {complete} of 3 steps complete.</span><button className="chip" onClick={() => onUpdate({ skipped: false })}>Resume setup</button></div>;
-  return <section className="workspace-setup card" aria-labelledby="setup-title">
-    <div className="setup-heading"><div><span className="onboarding-eyebrow">A GOOD PLACE TO BEGIN</span><h2 id="setup-title">Welcome{name ? `, ${name}` : ""}. Make this workspace yours.</h2></div><span className="setup-count">{complete} / 3</span></div>
+  return <details className="workspace-setup card" open={expanded} onToggle={event => setExpanded(event.currentTarget.open)} aria-labelledby="setup-title">
+    <summary><div className="setup-heading"><div><span className="onboarding-eyebrow">YOUR GETTING-STARTED CHECKLIST</span><h2 id="setup-title">Welcome{name ? `, ${name}` : ""}. Make this workspace yours.</h2></div><span className="setup-count">{complete} / 3</span></div></summary>
     <p>A few small steps to your first useful audit. You can explore now and return to this checklist whenever you are ready.</p>
     <progress value={complete} max={3} aria-label="Workspace setup progress" />
     <ol className="setup-steps">{steps.map((step, i) => <li key={step.title} className={step.done ? "is-complete" : ""}>
@@ -50,5 +51,5 @@ export function WorkspaceSetup({ name, progress, hasSites, hasAudit, writable, o
     </li>)}</ol>
     {!writable && <p className="small">You can review your report details now. Verify your email or refresh access in Settings before adding sites or audits.</p>}
     <div className="onboarding-footer"><button className="chip" onClick={() => onUpdate({ skipped: true })}>Explore first, finish later</button><span className="small">Progress is remembered on this device for this account.</span></div>
-  </section>;
+  </details>;
 }

@@ -23,19 +23,24 @@ export function BillingPanel() {
   const a = b.access;
   return <section className="card form" aria-labelledby="billing-title">
     <h2 id="billing-title">Your AudEx subscription</h2>
-    <button className="chip" type="button" onClick={() => {
+    <details><summary>Downloaded data export (advanced)</summary><button className="chip" type="button" onClick={() => {
       const url = URL.createObjectURL(new Blob([JSON.stringify({ accountId: store.account, exportedAt: new Date().toISOString(), ...data }, null, 2)], { type: "application/json" }));
       const link = document.createElement("a"); link.href = url; link.download = `audex-account-${store.account}.json`; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }}>Export downloaded account data (JSON)</button>
-    <p className="small">Includes local drafts, sites, training and audit metadata, not image files. Save photos individually from each audit; finalised audits also have PDF export.</p>
+    <p className="small">Includes local drafts, sites, training and audit metadata, not image files. Save photos individually from each audit; finalised audits also have PDF export. This JSON export is not a full backup or automatic restore.</p></details>
     {b.testMode && <p className="banner">Payment test mode: use Paystack test cards only. No live purchase is available in this environment.</p>}
-    <p><strong>{a?.plan === "COMPLIMENTARY" ? "Complimentary full access" : a?.plan ?? "Checking access"}</strong>
+    <p><strong>{a ? { COMPLIMENTARY: "Complimentary full access", TRIAL: "14-day trial", SOLO: "Solo", PROFESSIONAL: "Professional" }[a.plan] : "Checking access"}</strong>
       {a?.administrator && " - platform administrator"}</p>
-    {a && <p className="small">{a.activeSites} / {a.plan === "COMPLIMENTARY" ? "unlimited" : a.siteLimit} active sites.
-      {" "}{a.usageKnown ? `${(a.usedBytes / 1_000_000).toFixed(1)} MB photos used` : "Legacy photo sizes require administrator reconciliation"}.
-      {a.accessUntil && <> Access ends {new Date(a.accessUntil).toLocaleString()}.</>}
-      {b.writable && <> Reconnect by {new Date(a.offlineUntil).toLocaleString()} to renew offline editing.</>}</p>}
+    {a && <dl className="review-list access-summary">
+      <div><dt>Editing</dt><dd>{b.writable ? "Available" : "Read-only; records preserved"}</dd></div>
+      <div><dt>Active sites</dt><dd>{a.activeSites} / {a.plan === "COMPLIMENTARY" ? "unlimited" : a.siteLimit}</dd></div>
+      <div><dt>Photo storage</dt><dd>{a.usageKnown ? `${(a.usedBytes / 1_000_000).toFixed(1)} MB used` : "Requires administrator reconciliation"}</dd></div>
+      {a.plan !== "COMPLIMENTARY" && <><div><dt>Site allowance used</dt><dd><progress aria-label="Active-site allowance used" value={a.activeSites} max={a.siteLimit} /></dd></div>
+        {a.usageKnown && <div><dt>Photo allowance</dt><dd>{(a.storageBytes / 1_000_000).toLocaleString()} MB<progress aria-label="Photo allowance used" value={Math.min(a.usedBytes, a.storageBytes)} max={a.storageBytes} /></dd></div>}</>}
+      {a.accessUntil && <div><dt>Access ends</dt><dd>{new Date(a.accessUntil).toLocaleString()}</dd></div>}
+      {b.writable && <div><dt>Reconnect by</dt><dd>{new Date(a.offlineUntil).toLocaleString()} to refresh offline editing</dd></div>}
+    </dl>}
     {a && !a.verified && <><p>Verify the email address in your account before creating work or paying. Check your inbox and junk folder.</p>
       <button className="btn" disabled={busy} onClick={() => void run(async () => setMessage((await b.request<{ message: string }>("/verification", {})).message))}>Send verification email</button></>}
     {!b.writable && <p className="warn">Read-only: your existing audits, reports and drafts remain on this device. Refresh access or renew to edit again.</p>}

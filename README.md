@@ -77,6 +77,18 @@ The two approved existing-account complimentary grants are bound and verified by
 
 ## What the app does
 
+### Workspace interaction patterns
+
+Audit setup is a single guided page: site/date, checklist and visible required/optional services, then a review summary with the exact check count. Required service locks, template selection, frozen snapshots and scoring remain authoritative; a neutral check-count panel is not a compliance approval. The full baseline remains available.
+
+The checklist opens the first unfinished section. Answer cards use visible native radios, full response labels and explicit selected text. Section completion includes required not-applicable explanations, while the separate answered count still reflects recorded responses. Draft scores are labelled provisional. Users can show checks needing attention (unanswered, missing explanations, partial/non-compliant), expand/collapse sections and return to the next unfinished check. Finalisation uses a keyboard-accessible native confirmation dialog and is blocked while a photo is saving.
+
+Saved work separates drafts and completed audits with site search and state filtering. Drafts remain device-local; only confirmed uploads are labelled uploaded. Photo attachment is keyboard-operable, previews can be enlarged/downloaded, unavailable photos expose retry feedback and removal requires confirmation. Audit PDF, dashboard-summary PDF and advanced JSON exports are separately labelled.
+
+Mobile navigation includes a labelled Settings destination. Settings has section links; profile, site and training-topic edits prompt Save/Discard/Stay before in-app navigation or starting a tour, and warn on closing/reloading the tab. Guarded navigation waits for queued account writes after saving. Audit answers continue to autosave independently. Account password/email forms still use explicit submit actions. Subscription summaries expose access, usage and reconnect dates without changing entitlements or payment rules. Training comparisons describe association rather than causation.
+
+Presentation refinements live in `src/workspace.css`, loaded after the existing theme/onboarding styles. Preserve light/dark theme tokens, visible keyboard focus, touch targets, responsive reflow and reduced-motion support when extending these patterns.
+
 - **Phone-first audits:** answer checklist items, track progress, add notes and capture photos for failed or partial items.
 - **Offline use:** keep drafts and audit data on the device, then resume audits without a connection.
 - **Consistent scoring:** score against versioned rules and preserve the rule set used for each finalized audit.

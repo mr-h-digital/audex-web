@@ -11,7 +11,11 @@ export function useTraining() {
   const { store, data } = useAccountStore();
   const billing = useBilling();
   const sessions = data.training.filter((s) => !s.archived);
-  const add = (d: TrainingDraft) => { if (billing.permit()) store.change((l) => ({ ...l, training: addTraining(l.training, d, crypto.randomUUID()) })); };
+  const add = (d: TrainingDraft) => {
+    if (!billing.permit()) return false;
+    store.change((l) => ({ ...l, training: addTraining(l.training, d, crypto.randomUUID()) }));
+    return true;
+  };
   const remove = (id: string) => { if (billing.permit()) store.change((l) => ({ ...l, training: l.training.map((s) => s.id === id ? { ...s, archived: true, dirty: true } : s) })); };
   return { sessions, add, remove };
 }

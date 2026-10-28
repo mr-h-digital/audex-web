@@ -28,8 +28,16 @@ export function useSites() {
     }
     return true;
   };
-  const add = (d: SiteDraft) => { if (billing.permit() && capacity()) store.change((l) => ({ ...l, sites: addSite(l.sites, d, crypto.randomUUID()) })); };
-  const update = (id: string, d: SiteDraft) => { if (billing.permit()) store.change((l) => ({ ...l, sites: updateSite(l.sites, id, d) })); };
+  const add = (d: SiteDraft) => {
+    if (!billing.permit() || !capacity()) return false;
+    store.change((l) => ({ ...l, sites: addSite(l.sites, d, crypto.randomUUID()) }));
+    return true;
+  };
+  const update = (id: string, d: SiteDraft) => {
+    if (!billing.permit()) return false;
+    store.change((l) => ({ ...l, sites: updateSite(l.sites, id, d) }));
+    return true;
+  };
   const archive = (id: string, a: boolean) => { if (billing.permit() && (a || capacity())) store.change((l) => ({ ...l, sites: setArchived(l.sites, id, a) })); };
   return { sites, add, update, archive };
 }

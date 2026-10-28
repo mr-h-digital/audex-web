@@ -30,7 +30,7 @@ export function FilterBar(p: Props) {
             {p.sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </label>
-        <button type="button" className="btn" onClick={p.onDownload} disabled={p.busy}>{p.busy ? "Preparing…" : "Download report (PDF)"}</button>
+        <button type="button" className="btn" onClick={p.onDownload} disabled={p.busy}>{p.busy ? "Preparing…" : "Download dashboard summary (PDF)"}</button>
       </div>
       <p className="period">{p.periodLabel}</p>
     </div>

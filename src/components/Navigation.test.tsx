@@ -18,7 +18,7 @@ describe("workspace navigation", () => {
 
   it("renders a page title and supporting description", () => {
     const html = renderToStaticMarkup(<PageHeading title="Sites" description="Manage your facilities." />);
-    expect(html).toContain('<h1 class="pagetitle">Sites</h1>');
+    expect(html).toContain('<h1 tabindex="-1" class="pagetitle">Sites</h1>');
     expect(html).toContain("Manage your facilities.");
   });
 });

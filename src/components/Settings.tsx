@@ -6,11 +6,12 @@ import { AccountSection } from "./auth/AccountSection";
 import { PageHeading } from "./PageHeading";
 import { BillingPanel } from "../billing/BillingPanel";
 import { AdminPanel } from "../admin/AdminPanel";
+import { useUnsavedForm } from "./UnsavedChanges";
 
 const THEMES: { id: Theme; label: string; icon: string }[] = [
   { id: "light", label: "Light", icon: "☀" },
   { id: "dark", label: "Dark", icon: "☾" },
-  { id: "system", label: "Match my phone", icon: "◐" },
+  { id: "system", label: "Match my device", icon: "◐" },
 ];
 
 interface Props { profile: Profile; onSaveProfile: (p: Profile) => boolean; theme: Theme; onTheme: (t: Theme) => void; auth: Auth; unsynced: number }
@@ -20,6 +21,8 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
   const [saved, setSaved] = useState(false);
   const error = validateProfile(draft);
   const dirty = JSON.stringify(draft) !== JSON.stringify(profile);
+  const save = () => { const ok = !error && onSaveProfile(draft); setSaved(ok); return ok; };
+  useUnsavedForm(dirty, save, () => { setDraft(profile); setSaved(false); });
   const field = (k: keyof Profile, label: string, type = "text", hint?: string) => (
     <label className="field">{label}
       <input type={type} value={draft[k] ?? ""} inputMode={k === "phone" ? "tel" : k === "email" ? "email" : undefined}
@@ -31,8 +34,12 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
   return (
     <div className="dash settings-page">
       <PageHeading title="Settings" description="Manage your appearance, profile and account." />
+      <nav className="settings-links" aria-label="Settings sections">
+        <a href="#settings-appearance">Appearance</a><a href="#settings-profile">Report profile</a><a href="#settings-account">Account</a>
+        <a href="#settings-subscription">Subscription & exports</a><a href="#settings-administration">Account role</a><a href="#settings-about">About & support</a>
+      </nav>
 
-      <section className="card">
+      <section className="card" id="settings-appearance">
         <h2>Appearance</h2>
         <p className="small">Dark mode is easier on the eyes in a dim room.</p>
         <div className="themes" role="group" aria-label="Appearance">
@@ -43,8 +50,8 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
         </div>
       </section>
 
-      <form className="card form" data-tour="settings-profile" onSubmit={(e) => { e.preventDefault(); if (!error) setSaved(onSaveProfile(draft)); }}>
-        <h2>Your profile</h2>
+      <form className="card form" id="settings-profile" data-tour="settings-profile" onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <h2>Your report profile</h2>
         <p className="small">Your report details are copied into new audits. They do not change attribution already saved on existing audits.</p>
         {field("name", "Full name")}
         {field("jobTitle", "Job title")}
@@ -57,11 +64,11 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
         <button className="btn" type="submit" disabled={!!error}>Save profile</button>
       </form>
 
-      <AccountSection auth={auth} unsynced={unsynced} />
-      <BillingPanel />
-      <AdminPanel auth={auth} />
+      <div id="settings-account" className="settings-block"><AccountSection auth={auth} unsynced={unsynced} /></div>
+      <div id="settings-subscription" className="settings-block"><BillingPanel /></div>
+      <div id="settings-administration" className="settings-block"><AdminPanel auth={auth} /></div>
 
-      <section className="card">
+      <section className="card" id="settings-about">
         <h2>About</h2>
         <div className="setrow"><div>AudEx<small>Independent housekeeping audit software for healthcare and senior living</small></div></div>
         <p className="small">For facility operators, housekeeping managers, independent auditors and cleaning contractors. Individual accounts do not include shared team workspaces or cross-user reporting.</p>
