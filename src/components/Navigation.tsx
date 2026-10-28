@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 export type Page = "audit" | "sites" | "dashboard" | "settings";
 
 const ITEMS: { id: Page; label: string; path: string }[] = [
@@ -8,8 +10,20 @@ const ITEMS: { id: Page; label: string; path: string }[] = [
 ];
 
 export function Navigation({ page, onNavigate }: { page: Page; onNavigate: (page: Page) => void }) {
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = nav.current!;
+    const update = () => {
+      const height = getComputedStyle(element).position === "fixed" ? Math.ceil(element.getBoundingClientRect().height) : 0;
+      document.documentElement.style.setProperty("--workspace-nav-height", `${height}px`);
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    update();
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty("--workspace-nav-height"); };
+  }, []);
   return (
-    <nav className="tabbar" aria-label="Main">
+    <nav ref={nav} className="tabbar" aria-label="Main">
       <span className="tabbar__heading">Workspace</span>
       {ITEMS.map(({ id, label, path }) => (
         <button key={id} data-tour={`nav-${id}`} className={id === "settings" ? "tabbar__settings" : undefined} type="button"

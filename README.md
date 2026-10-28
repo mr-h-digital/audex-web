@@ -89,6 +89,10 @@ Mobile navigation includes a labelled Settings destination. Settings has section
 
 Presentation refinements live in `src/workspace.css`, loaded after the existing theme/onboarding styles. Preserve light/dark theme tokens, visible keyboard focus, touch targets, responsive reflow and reduced-motion support when extending these patterns.
 
+The Sites page stacks its cards on narrower workspaces and top-aligns them in the wide two-column layout. Site details and action groups wrap independently so long facility names and larger text cannot push controls outside their card.
+
+Responsive workspace controls reflow rather than hiding or clipping actions. Saved-audit actions, dashboard filters/chart toggles, settings, password fields and administration forms support narrow layouts and enlarged text. Checklist answer cards adapt to their available width and text size using container queries. Keep chart tables in their own horizontal scroll containers when needed. The bottom navigation measures its rendered height with `ResizeObserver`; audit actions and page padding use that height so wrapped navigation labels and device safe areas do not cover content. In short or highly constrained viewports, audit actions stay in normal flow rather than obscuring the checklist. Desktop navigation does not reserve bottom space.
+
 - **Phone-first audits:** answer checklist items, track progress, add notes and capture photos for failed or partial items.
 - **Offline use:** keep drafts and audit data on the device, then resume audits without a connection.
 - **Consistent scoring:** score against versioned rules and preserve the rule set used for each finalized audit.
