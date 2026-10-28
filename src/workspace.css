@@ -1,5 +1,7 @@
 /* Task hierarchy and interaction states shared across the workspace. */
-html { scroll-padding-block: 24px calc(var(--workspace-nav-height, 56px) + 180px); }
+html { scroll-padding-block: calc(var(--workspace-header-height, 64px) + 16px) calc(var(--workspace-nav-height, 56px) + 180px); overscroll-behavior-y: none; }
+.brand-header { position: sticky; top: 0; align-self: start; z-index: 6; }
+.tour-notice { top: calc(var(--workspace-header-height, 64px) + 12px); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
@@ -8,6 +10,7 @@ button:disabled { cursor: not-allowed; }
 .app-content { line-height: 1.55; }
 .app-content h2 { font-size: 1.15rem; }
 .app-content h3 { font-size: 1rem; }
+.page-heading .pagetitle:focus { outline: none; }
 .small { line-height: 1.6; }
 .app, .workspace-dialog, .tour-panel { overflow-wrap: anywhere; }
 .card__head { flex-wrap: wrap; }
@@ -161,7 +164,8 @@ button:disabled { cursor: not-allowed; }
   .app > .workspace-notices { grid-area: status; }
   .tabbar .tabbar__settings { display: flex; }
   .audit-setup-layout { grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); }
-  .audit-review { position: sticky; top: 24px; }
+  .audit-review { position: sticky; top: calc(var(--workspace-header-height, 64px) + 24px); }
+  .tabbar { top: calc(var(--workspace-header-height, 64px) + 16px); }
   .finalbar { bottom: 16px; }
   .settings-page > #settings-appearance, .settings-page > #settings-profile { grid-column: auto; }
 }

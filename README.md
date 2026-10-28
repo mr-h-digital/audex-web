@@ -91,6 +91,8 @@ Presentation refinements live in `src/workspace.css`, loaded after the existing 
 
 The Sites page stacks its cards on narrower workspaces and top-aligns them in the wide two-column layout. Site details and action groups wrap independently so long facility names and larger text cannot push controls outside their card.
 
+The brand header stays at the viewport top during scrolling, including account screens. Its measured height offsets sticky desktop navigation, audit review summaries, tour notices and scroll targets. Root overscroll bounce is disabled where supported; normal page scrolling and browser zoom remain available.
+
 Responsive workspace controls reflow rather than hiding or clipping actions. Saved-audit actions, dashboard filters/chart toggles, settings, password fields and administration forms support narrow layouts and enlarged text. Checklist answer cards adapt to their available width and text size using container queries. Keep chart tables in their own horizontal scroll containers when needed. The bottom navigation measures its rendered height with `ResizeObserver`; audit actions and page padding use that height so wrapped navigation labels and device safe areas do not cover content. In short or highly constrained viewports, audit actions stay in normal flow rather than obscuring the checklist. Desktop navigation does not reserve bottom space.
 
 - **Phone-first audits:** answer checklist items, track progress, add notes and capture photos for failed or partial items.
