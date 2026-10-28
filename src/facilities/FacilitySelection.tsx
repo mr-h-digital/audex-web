@@ -19,7 +19,7 @@ export function FacilitySelection({ value, onChange }: { value: FacilitySelectio
   return <section className="facility-selection" aria-labelledby="facility-selection-title">
     <h3 id="facility-selection-title">Choose your audit scope</h3>
     <label className="field">Facility type<select value={value.facilityType ?? ""} onChange={(e) => onChange(selectionForFacility(e.target.value))}>
-      <option value="">Not specified — existing WPC checklist</option>
+      <option value="">Not specified — full baseline checklist</option>
       {facilityTypes.map((type) => <option key={type.code} value={type.code}>{type.name}</option>)}
     </select></label>
     <label className="field">Checklist / audit standard<select value={value.templateCode} onChange={(e) => onChange({ ...value, templateCode: e.target.value, areas: [...new Set([...value.areas, ...requiredAreaCodes(e.target.value)])] })}>
@@ -34,6 +34,7 @@ export function FacilitySelection({ value, onChange }: { value: FacilitySelectio
       </label>)}</div>
     </details>
     <p className="banner" role="status">{snapshot.notice}</p>
+    <p className="small">AudEx is independent software by Mr. H Digital, not restricted to one business. WPC labels identify the existing source methodology; operational checklists are subsets of that material, not industry-wide compliance standards. Confirm the checklist's suitability and your organisation's requirements before starting.</p>
     <details>
       <summary>Preview checklist — {templateItemCount(snapshot)} checks</summary>
       <p className="small">The selected template and facility context are frozen when you start. Changing the site later does not rewrite this audit.</p>

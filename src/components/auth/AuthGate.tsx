@@ -103,7 +103,7 @@ function Register({ auth, onBack }: { auth: Auth; onBack: () => void }) {
     </label>)}
     <PasswordField label="Password" value={f.password} onChange={(password) => setF({ ...f, password })} autoComplete="new-password" hint={<Hints pw={f.password} />} />
     <PasswordField label="Repeat password" value={f.again} onChange={(again) => setF({ ...f, again })} autoComplete="new-password" />
-    <p className="small">Individual accounts only. Team and organisation plans are available by enquiry. Prices are charged without VAT; Mr. H Digital is not VAT registered.</p>
+    <p className="small">Individual accounts only. Shared team workspaces are not included; contact Mr. H Digital to discuss organisation requirements. Prices are charged without VAT; Mr. H Digital is not VAT registered.</p>
     {error && <p className="warn" role="alert">{error}</p>}
     <button className="btn" type="submit" disabled={busy}>{busy ? "Creating account..." : "Create account and email verification link"}</button>
     <button className="linkbtn" type="button" onClick={onBack}>Back to sign in</button>
@@ -121,7 +121,7 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
         <aside className="auth-story" aria-label="The AudEx approach">
           <span className="onboarding-eyebrow">AUDIT EXCELLENCE</span>
           <h2>Clarity on the floor.<br /><em>Confidence in every finding.</em></h2>
-          <p>Purpose-built for housekeeping audits in the places where care comes first.</p>
+          <p>Independent housekeeping audit software for healthcare and senior living. For facility operators, housekeeping managers, independent auditors and cleaning contractors.</p>
           <div className="auth-story__steps"><span>01 <strong>Walk &amp; capture</strong></span><span>02 <strong>Understand the detail</strong></span><span>03 <strong>Share a clearer story</strong></span></div>
           <p className="auth-story__credit">Designed &amp; developed by <a href="https://www.mrhdigital.co.za/" target="_blank" rel="noopener noreferrer">Mr. H Digital</a></p>
         </aside>

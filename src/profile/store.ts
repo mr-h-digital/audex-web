@@ -1,15 +1,12 @@
 import { useCallback, useState } from "react";
-import { REPORT_AUTHOR } from "../config";
 import { useAccountStore } from "../sync/accountStore";
 
-export const EMPLOYER = "Western Province Caterers (Health Care Division)";
-
 /** Who is doing the audits. Report preferences are stored separately for each local account. */
-export interface Profile { name: string; jobTitle: string; email: string; phone: string }
+export interface Profile { name: string; jobTitle: string; email: string; phone: string; organisation?: string }
 
-export const DEFAULT_PROFILE: Profile = { name: REPORT_AUTHOR, jobTitle: "Housekeeping Trainer", email: "", phone: "" };
+export const DEFAULT_PROFILE: Profile = { name: "", jobTitle: "", email: "", phone: "", organisation: "" };
 
-export const roleLine = (p: Profile): string => [p.jobTitle.trim(), EMPLOYER].filter(Boolean).join(", ");
+export const roleLine = (p: Profile): string => [p.jobTitle.trim(), p.organisation?.trim()].filter(Boolean).join(", ");
 
 /** Returns a message for the first problem, or null when the profile can be saved. */
 export function validateProfile(p: Profile): string | null {
@@ -18,7 +15,7 @@ export function validateProfile(p: Profile): string | null {
   return null;
 }
 
-const clean = (p: Profile): Profile => ({ name: p.name.trim(), jobTitle: p.jobTitle.trim(), email: p.email.trim(), phone: p.phone.trim() });
+const clean = (p: Profile): Profile => ({ name: p.name.trim(), jobTitle: p.jobTitle.trim(), email: p.email.trim(), phone: p.phone.trim(), organisation: p.organisation?.trim() ?? "" });
 
 function read(key: string): Profile {
   try { return { ...DEFAULT_PROFILE, ...JSON.parse(localStorage.getItem(key) ?? "{}") }; } catch { return DEFAULT_PROFILE; }

@@ -17,11 +17,12 @@ describe("PDF report", () => {
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     expect(bytes.length).toBeGreaterThan(3000);
   });
-  it("names the file by period and credits Chernay", async () => {
+  it("names the file by period without inventing an auditor or employer", async () => {
     const a = run("last90", null);
     expect(reportFilename(a)).toBe("AudEx-report_2026-07-18_to_2026-10-15.pdf");
     const doc = await buildReport(a, opts);
-    expect(String(doc.output())).toContain("Chernay Hildebrandt");
+    expect(String(doc.output())).toContain("Auditor not recorded");
+    expect(String(doc.output())).not.toContain("Western Province Caterers");
   });
   it("handles an empty period", async () => {
     const a = computeAnalytics({ ...d, period: resolvePeriod("custom", today, { from: "2020-01-01", to: "2020-02-01" }), siteIds: null });

@@ -205,7 +205,7 @@ function Main({ auth }: { auth: Auth }) {
                 <details className="adv"><summary>Scoring rules (advanced)</summary>
                   <select aria-label="Scoring rules" value={ruleCode} onChange={(e) => setRuleCode(e.target.value)}>
                     {ruleSets.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}</select>
-                  <p className="small">Leave this on the current WPC rules unless you have been told to change it.</p></details></>}
+                  <p className="small">WPC identifies the source methodology, not a requirement to work for WPC. Keep the current rules unless your organisation has authorised a different set. Neither the rules nor a score certify regulatory compliance.</p></details></>}
               {!installed() && finalAudits.length > 0 && <p className="tip">Make room for your next audit: add AudEx to your home screen from your browser menu. Load it online before offline use. Installation is not a backup; keep important exports and synced copies.</p>}
             </section>
             <AuditList audits={audits} onOpen={setOpenId} onDelete={(id) => { if (!billing.permit() || !window.confirm("Delete this unfinished audit? This cannot be undone.")) return; audits.find((a) => a.id === id)?.photos?.forEach((ph) => void deleteAccountPhoto(store.account, ph.id).catch(() => undefined)); remove(id); }} />

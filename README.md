@@ -104,6 +104,10 @@ Administration requires a working server connection; changes are not queued offl
 
 ### Facility types, audit scope and standards
 
+AudEx is independent software by Mr. H Digital for healthcare and senior living: facility operators, housekeeping managers, independent auditors and cleaning contractors. Access is not restricted to WPC employees. Product identity is separate from checklist provenance: existing WPC checklist/rule names, internal codes and published definitions remain unchanged, and operational subsets are not independently validated industry-wide standards. Confirm source-material permissions and professional suitability before wider adoption; do not claim regulatory certification.
+
+New report profiles have no assumed person, title or employer. Settings accepts an optional organisation/business byline; this is report text, not a team membership or account role. Existing saved profile values are retained, but profiles without an organisation field no longer acquire an automatic WPC employer; users should enter their own affiliation. New audits copy these details. Existing stored audit author/role strings, snapshots and scores remain untouched; missing historical attribution is labelled "Auditor not recorded" / "Role not recorded" rather than assigned to a named person. Individual plans do not include shared team workspaces or cross-user reporting.
+
 Use **Sites > Facility type** to classify a hospital, clinic, retirement village or other facility. Selecting a classified site or changing facility type before an audit now defaults to its shorter operational checklist. Confirm all areas/services present, choose a **Checklist / audit standard**, and open **Preview checklist** to see its requirements. Areas are selected per audit to account for facilities with services not implied by their type.
 
 | Default operational checklist | Starting checks | Mandatory area |

@@ -1,3 +1,3 @@
-/** Named as the author on reports that go to WPC. */
-export const REPORT_AUTHOR = "Chernay Hildebrandt";
-export const REPORT_ROLE = "Housekeeping Trainer, Western Province Caterers (Health Care Division)";
+/** Missing historical report details must not be attributed to an unrelated person or employer. */
+export const REPORT_AUTHOR = "Auditor not recorded";
+export const REPORT_ROLE = "Role not recorded";

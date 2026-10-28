@@ -22,7 +22,7 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
   const dirty = JSON.stringify(draft) !== JSON.stringify(profile);
   const field = (k: keyof Profile, label: string, type = "text", hint?: string) => (
     <label className="field">{label}
-      <input type={type} value={draft[k]} inputMode={k === "phone" ? "tel" : k === "email" ? "email" : undefined}
+      <input type={type} value={draft[k] ?? ""} inputMode={k === "phone" ? "tel" : k === "email" ? "email" : undefined}
         autoComplete={k === "name" ? "name" : k === "email" ? "email" : k === "phone" ? "tel" : undefined}
         onChange={(e) => { setDraft({ ...draft, [k]: e.target.value }); setSaved(false); }} />
       {hint && <span className="small">{hint}</span>}</label>
@@ -45,9 +45,10 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
 
       <form className="card form" data-tour="settings-profile" onSubmit={(e) => { e.preventDefault(); if (!error) setSaved(onSaveProfile(draft)); }}>
         <h2>Your profile</h2>
-        <p className="small">Your name and job title are printed on every report you download.</p>
+        <p className="small">Your report details are copied into new audits. They do not change attribution already saved on existing audits.</p>
         {field("name", "Full name")}
         {field("jobTitle", "Job title")}
+        {field("organisation", "Organisation / business (optional)", "text", "Use your own organisation, or leave this blank if you work independently. This is report text, not a shared team workspace.")}
         {field("email", "Email (optional)", "email")}
         {field("phone", "Phone (optional)", "tel")}
         <p className="small">Reports will say: Prepared by {draft.name.trim() || "…"}, {roleLine(draft)}</p>
@@ -62,7 +63,9 @@ export function Settings({ profile, onSaveProfile, theme, onTheme, auth, unsynce
 
       <section className="card">
         <h2>About</h2>
-        <div className="setrow"><div>AudEx<small>Housekeeping audits for WPC Health Care Division</small></div></div>
+        <div className="setrow"><div>AudEx<small>Independent housekeeping audit software for healthcare and senior living</small></div></div>
+        <p className="small">For facility operators, housekeeping managers, independent auditors and cleaning contractors. Individual accounts do not include shared team workspaces or cross-user reporting.</p>
+        <p className="small">Checklist provenance is separate from product identity: WPC-labelled checklists and scoring rules retain their source names. Reduced operational checklists select from that existing material; they are not independently validated industry-wide standards or regulatory certification. Confirm suitability and your organisation's requirements before auditing.</p>
         <div className="setrow"><span>Version</span><strong>{__APP_INFO__.version}</strong></div>
         <div className="setrow"><span>Build</span><code>{__APP_INFO__.build}</code></div>
         <div className="setrow"><span>Built on</span><time dateTime={__APP_INFO__.builtAt}>{new Date(__APP_INFO__.builtAt).toLocaleString(undefined, {

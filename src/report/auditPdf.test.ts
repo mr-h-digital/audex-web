@@ -7,12 +7,14 @@ import { auditFilename, buildAuditReport, downloadAuditReport } from "./auditPdf
 describe("audit PDF", () => {
   const answers = Object.fromEntries(sections.flatMap((s) => s.items.map((i, n) => [i.key, n % 9 === 0 ? "PARTIALLY_COMPLIANT" : "COMPLIANT"])));
   const a = finalise({ ...newAudit("a1", { id: "s1", name: "Tygerberg Clinic", unitManager: "A. Smith", supervisor: "B. Jones" }, "2026-10-15", "WPC_V1"), answers: answers as never }, "t");
-  it("is a PDF naming the manager, supervisor and Chernay", async () => {
+  it("is a PDF with neutral attribution when the original auditor was not recorded", async () => {
     const doc = await buildAuditReport(a);
     const out = String(doc.output());
     expect(out.startsWith("%PDF-")).toBe(true);
     expect(doc.getNumberOfPages()).toBeGreaterThan(1);
-    expect(out).toContain("Chernay Hildebrandt");
+    expect(out).toContain("Auditor not recorded");
+    expect(out).not.toContain("Chernay Hildebrandt");
+    expect(out).not.toContain("Western Province Caterers");
   });
   it("names the file by site and date", () => expect(auditFilename(a)).toBe("AudEx-audit_Tygerberg-Clinic_2026-10-15.pdf"));
   it("uses the frozen facility and area metadata in the report", async () => {

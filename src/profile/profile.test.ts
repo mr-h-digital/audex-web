@@ -3,18 +3,20 @@ import { applyTheme, parseTheme } from "../theme/theme";
 import { DEFAULT_PROFILE, roleLine, validateProfile } from "./store";
 
 describe("profile", () => {
-  it("defaults to Chernay and reads as a report byline", () => {
-    expect(DEFAULT_PROFILE.name).toBe("Chernay Hildebrandt");
-    expect(roleLine(DEFAULT_PROFILE)).toBe("Housekeeping Trainer, Western Province Caterers (Health Care Division)");
+  it("starts without an assumed person, job title or employer", () => {
+    expect(DEFAULT_PROFILE.name).toBe("");
+    expect(roleLine(DEFAULT_PROFILE)).toBe("");
+    expect(validateProfile(DEFAULT_PROFILE)).toMatch(/name/i);
+    expect(roleLine({ ...DEFAULT_PROFILE, jobTitle: "Independent Auditor", organisation: " Example Services " })).toBe("Independent Auditor, Example Services");
   });
   it("needs a name and a sensible email", () => {
     expect(validateProfile({ ...DEFAULT_PROFILE, name: "  " })).toMatch(/name/i);
-    expect(validateProfile({ ...DEFAULT_PROFILE, email: "nope" })).toMatch(/email/i);
-    expect(validateProfile({ ...DEFAULT_PROFILE, email: "chernay@example.com" })).toBeNull();
-    expect(validateProfile(DEFAULT_PROFILE)).toBeNull();
+    expect(validateProfile({ ...DEFAULT_PROFILE, name: "Test Auditor", email: "nope" })).toMatch(/email/i);
+    expect(validateProfile({ ...DEFAULT_PROFILE, name: "Test Auditor", email: "auditor@example.com" })).toBeNull();
   });
   it("drops an empty job title from the byline", () => {
-    expect(roleLine({ ...DEFAULT_PROFILE, jobTitle: "" })).toBe("Western Province Caterers (Health Care Division)");
+    expect(roleLine({ ...DEFAULT_PROFILE, jobTitle: "", organisation: "Example Services" })).toBe("Example Services");
+    expect(roleLine({ name: "Existing Auditor", jobTitle: "Trainer", email: "", phone: "" })).toBe("Trainer");
   });
 });
 
